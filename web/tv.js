@@ -71,7 +71,7 @@
   };
   const player = { x: 60, y: 86, tx: null, ty: null, pendingPick: -1 };
   let view = { sceneId: "menu", state: { entropy: 0, connection: 2 }, options: [], history: [] };
-  let busy = false, nearIndex = -1, bubble = null, pulse = 0, lastConnection = 0, t0 = performance.now();
+  let prompt = null, busy = false, nearIndex = -1, bubble = null, pulse = 0, lastConnection = 0, t0 = performance.now();
   const keys = new Set();
   const confetti = [];
 
@@ -100,14 +100,19 @@
   window.TV = {
     show(v) {
       const prevScene = view.sceneId;
+      v._lastEnding = view._lastEnding;
       view = v;
       if ((v.state?.connection ?? 0) > lastConnection) pulse = 1;
       lastConnection = v.state?.connection ?? 0;
-      bubble = v.last?.reaction ? { text: v.last.reaction, who: speaker(v.last.reaction), until: performance.now() + 5000 } : null;
-      if (v.sceneId === "s_win" || v.ending?.id === "e_mycelial") burstConfetti();
+      bubble = null; // story text and speech now live in the dialog box under the screen
+      const newEnding = v.ending?.id && v.ending.id !== view._lastEnding;
+      if ((v.sceneId === "s_win" && prevScene !== "s_win") || (newEnding && v.ending.id === "e_mycelial")) burstConfetti();
+      view._lastEnding = v.ending?.id;
       if (prevScene !== v.sceneId) { player.tx = player.ty = null; player.pendingPick = -1; }
     },
     setBusy(b) { busy = b; },
+    setPrompt(s) { prompt = s; },
+    onAction: null,
   };
 
   function speaker(text) {
@@ -121,8 +126,9 @@
     const k = e.key.toLowerCase();
     if (["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s"].includes(k)) {
       keys.add(k); player.tx = player.ty = null; e.preventDefault();
-    } else if ((k === " " || k === "enter") && nearIndex >= 0) {
-      pick(nearIndex); e.preventDefault();
+    } else if (k === " " || k === "enter") {
+      if (window.TV.onAction && window.TV.onAction()) { e.preventDefault(); return; }
+      if (nearIndex >= 0) { pick(nearIndex); e.preventDefault(); }
     } else if (/^[1-4]$/.test(k)) {
       pick(Number(k) - 1);
     }
@@ -289,7 +295,7 @@
 
     // hint bar
     ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, H - 11, W, 11);
-    const hint = busy ? "..." : nearIndex >= 0
+    const hint = busy ? "Your helper is thinking..." : prompt ? prompt : nearIndex >= 0
       ? `Press SPACE: ${short(view.options[nearIndex].label)}`
       : view.options?.length ? "Walk to a sign: arrow keys or W A S D. Or click a sign." : "";
     text(hint, 4, H - 3, nearIndex >= 0 ? "#7ef9d4" : "#ffffff");

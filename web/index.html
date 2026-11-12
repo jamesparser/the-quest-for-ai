@@ -5,135 +5,148 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Quest for AI</title>
 <!--
-  The game page. Works two ways:
-  1. Local:  python -m tqfai serve   then open http://127.0.0.1:8787
-  2. Online: the Vercel site serves this page and /api on the same address.
-  The page never sees the AI key. It only talks to our own /api.
-
-  Background mushrooms are drawn here in SVG (our own art, free to use).
-  They smile and glow when the team gets along, and look worried when chat gets tense.
+  The game page. Everything happens inside one big TV:
+    - top of the screen: power bars (Tension, Team glow) and which part of the story you're in
+    - middle: the 8-bit world (web/tv.js). Walk to a numbered sign and press SPACE, or click it
+    - bottom: the dialog box. Story text comes page by page (SPACE / click to continue), then the choices
+  Works locally (python -m tqfai serve) and online (Vercel). The page never sees the AI key.
 -->
 <style>
   :root {
     --sky1:#2a1f5c; --sky2:#3b2a7a; --sky3:#6a4bb0;
-    --panel:rgba(24,18,56,.82); --ink:#fff7ee; --muted:#d6cdf5; --glow:#7ef9d4; --heat:#ff8fa3;
+    --ink:#fff7ee; --muted:#d6cdf5; --glow:#7ef9d4; --heat:#ff8fa3; --gold:#ffd23f;
     --gpx:4px; --smile:1; --worry:0;
   }
   * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; font:17px/1.55 "Nunito", system-ui, sans-serif; color:var(--ink);
-         background:linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%); background-attachment:fixed; }
-  main { position:relative; z-index:1; max-width:720px; margin:0 auto; padding:24px 16px 160px; }
-  h1 { font-size:1.6rem; color:var(--glow); margin:0 0 2px; text-shadow:0 0 12px rgba(126,249,212,.5); }
-  h2 { margin:.2em 0 .4em; }
-  .panel { background:var(--panel); border-radius:18px; padding:18px; margin:12px 0;
-           box-shadow:0 8px 30px rgba(0,0,0,.25); backdrop-filter:blur(3px); }
-  .muted { color:var(--muted); font-size:.92rem; }
-  .story { white-space:pre-line; }
-  /* ---------- the 8-bit TV ---------- */
-  .tv { margin:14px 0 6px; padding:12px 12px 10px; border-radius:22px; background:linear-gradient(180deg,#4a3a2a,#2e2318);
-        box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.12); }
-  .tv canvas { display:block; width:100%; aspect-ratio:16/9; image-rendering:pixelated; border-radius:12px;
-               background:#000; cursor:pointer; touch-action:none; box-shadow:inset 0 0 20px rgba(0,0,0,.8); }
-  .tv .knobs { display:flex; justify-content:space-between; align-items:center; margin-top:8px; color:#f3e6cf; font-size:.95rem; font-weight:600; }
-  .tv .knobs i { display:inline-block; width:12px; height:12px; border-radius:50%; background:#1a130c; margin-left:6px; box-shadow:inset 0 1px 2px rgba(255,255,255,.2); }
-  button.near { border-color:var(--glow); background:#3a2f8a; box-shadow:0 0 0 2px rgba(126,249,212,.35); }
-  .companion { border-left:4px solid var(--glow); padding:6px 0 6px 12px; font-style:italic; background:rgba(126,249,212,.06); border-radius:0 10px 10px 0; }
-  button { display:block; width:100%; text-align:left; margin:10px 0; padding:13px 14px; border-radius:14px;
-           border:2px solid #5b4aa8; background:#2d2370; color:var(--ink); font:inherit; cursor:pointer;
-           transition:transform .1s, border-color .2s; }
-  button:hover { border-color:var(--glow); transform:translateY(-1px); }
-  button:disabled { opacity:.5; cursor:wait; transform:none; }
-  .meters { display:flex; gap:16px; font-size:.85rem; color:var(--muted); }
-  .bar { height:8px; border-radius:4px; background:rgba(255,255,255,.12); margin-top:4px; overflow:hidden; }
-  .bar > i { display:block; height:100%; transition:width .5s; }
+  html, body { height:100%; }
+  body { margin:0; font:17px/1.5 "Nunito", "Trebuchet MS", system-ui, sans-serif; color:var(--ink);
+         background:linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%); background-attachment:fixed;
+         display:flex; align-items:center; justify-content:center; padding:12px; }
 
-  /* ---------- background mushrooms ---------- */
+  /* ---------- the TV ---------- */
+  .tv { position:relative; z-index:1; width:min(1200px, 100%, calc((100vh - 330px) * 1.78)); min-width:min(100%, 340px);
+        padding:16px 16px 12px; border-radius:28px; background:linear-gradient(180deg,#5a4632,#2e2318);
+        box-shadow:0 18px 50px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.15); }
+  .screen { position:relative; border-radius:18px; overflow:hidden; background:#0d0a24;
+            box-shadow:inset 0 0 30px rgba(0,0,0,.9), 0 0 0 3px #1a130c; }
+  .screen::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:18px;
+                   background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.35) 100%); }
+  canvas#tv { display:block; width:100%; aspect-ratio:16/9; image-rendering:pixelated; cursor:pointer; touch-action:none; }
+
+  /* power bars + part title, on top of the picture */
+  .hud { position:absolute; top:0; left:0; right:0; display:flex; gap:14px; align-items:center; padding:10px 14px;
+         background:linear-gradient(180deg, rgba(8,6,24,.85), rgba(8,6,24,0)); font-weight:800; font-size:clamp(12px,1.4vw,16px);
+         text-shadow:0 2px 0 #000; pointer-events:none; }
+  .hud .part { flex:1.4; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .hud .meter { flex:1; min-width:90px; }
+  .hud .bar { height:10px; margin-top:3px; background:rgba(255,255,255,.15); border:2px solid #000; }
+  .hud .bar i { display:block; height:100%; transition:width .6s; }
+
+  /* dialog box under the picture, still inside the glass */
+  .dialog { position:relative; margin:0; padding:10px 14px 10px; min-height:150px;
+            background:#141036; border-top:4px solid #000; font-size:clamp(15px,1.55vw,19px); cursor:pointer; }
+  .dialog .box { border:3px solid #fff; border-radius:8px; padding:10px 14px 8px; min-height:126px; background:#1b1650; box-shadow:0 0 0 3px #000 inset; min-height:inherit; }
+  .who { display:inline-block; font-weight:800; color:#000; background:var(--gold); padding:0 8px; border-radius:4px; margin-bottom:6px; font-size:.85em; }
+  .who.helper { background:var(--glow); }
+  .who.narrator { background:#cdbbff; }
+  .say { white-space:pre-line; min-height:3.2em; }
+  .say.helper { font-style:italic; }
+  .more { position:absolute; right:30px; bottom:18px; color:var(--glow); font-size:.8em; animation:blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity:0 } }
+  .choices { list-style:none; margin:6px 0 0; padding:0; display:grid; gap:6px; grid-template-columns:1fr; }
+  @media (min-width:700px) { .choices { grid-template-columns:1fr 1fr; } }
+  .choices button { display:flex; gap:10px; width:100%; text-align:left; padding:9px 12px; border-radius:8px; cursor:pointer;
+                    border:2px solid #4a3fa0; background:#241d66; color:var(--ink); font:inherit; font-size:.95em; }
+  .choices button b { color:var(--gold); min-width:1.2em; }
+  .choices button:hover, .choices button.near { border-color:var(--glow); background:#2f2788; box-shadow:0 0 0 2px rgba(126,249,212,.35); }
+  .choices button:disabled { opacity:.5; cursor:wait; }
+  .choices small { display:block; color:var(--muted); font-size:.85em; }
+  .reflect { margin:4px 0 0 1.2em; padding:0; }
+  @media (max-width:600px) {
+    .hud { padding:5px 8px; gap:8px; font-size:11px; }
+    .hud .part { display:none; }
+    .hud .bar { height:6px; border-width:1px; }
+    .bezel > span:nth-child(2) { display:none; }
+    body { align-items:flex-start; }
+  }
+
+  /* bezel: brand + controls help */
+  .bezel { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; color:#f3e6cf; font-size:clamp(12px,1.2vw,15px); font-weight:700; }
+  .bezel .brand { color:var(--glow); letter-spacing:.06em; text-shadow:0 0 10px rgba(126,249,212,.4); }
+  .bezel .knobs i { display:inline-block; width:16px; height:16px; border-radius:50%; background:#1a130c; margin-left:8px; box-shadow:inset 0 2px 3px rgba(255,255,255,.2); }
+
+  /* ---------- cute mushrooms around the TV (our own SVG art) ---------- */
   #shrooms { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-  #shrooms svg.m { position:absolute; filter:drop-shadow(0 0 var(--gpx) rgba(126,249,212,.75));
-                   transition:filter .8s; animation:bob 4s ease-in-out infinite; transform-origin:50% 100%; }
+  #shrooms svg.m { position:absolute; filter:drop-shadow(0 0 var(--gpx) rgba(126,249,212,.75)); transition:filter .8s;
+                   animation:bob 4s ease-in-out infinite; transform-origin:50% 100%; }
   body.tense #shrooms svg.m { animation:shiver .35s linear infinite; filter:drop-shadow(0 0 3px rgba(255,143,163,.6)); }
   @keyframes bob { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }
   @keyframes shiver { 0%,100% { transform:rotate(-1.5deg) } 50% { transform:rotate(1.5deg) } }
-  @media (prefers-reduced-motion: reduce) { #shrooms svg.m { animation:none !important; } }
+  @media (prefers-reduced-motion: reduce) { #shrooms svg.m, .more { animation:none !important; } }
   .star { position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:.6; }
 </style>
 </head>
 <body>
 
-<!-- One reusable cute mushroom. The cap colour comes from CSS `color`. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="shroom" viewBox="0 0 100 110">
     <path d="M30 56 L70 56 Q78 104 66 105 L34 105 Q22 104 30 56Z" fill="#fff4e3" stroke="#3a2546" stroke-width="3"/>
     <path d="M6 54 Q6 6 50 6 Q94 6 94 54 Q94 62 85 62 L15 62 Q6 62 6 54Z" fill="currentColor" stroke="#3a2546" stroke-width="3"/>
     <path d="M14 30 Q26 14 44 11" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="30" cy="32" r="7" fill="#fff" fill-opacity=".92"/>
-    <circle cx="58" cy="20" r="5" fill="#fff" fill-opacity=".92"/>
-    <circle cx="74" cy="40" r="8" fill="#fff" fill-opacity=".92"/>
-    <circle cx="48" cy="46" r="4" fill="#fff" fill-opacity=".92"/>
-    <ellipse cx="41" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/>
-    <ellipse cx="59" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/>
-    <circle cx="42.6" cy="75" r="1.6" fill="#fff"/>
-    <circle cx="60.6" cy="75" r="1.6" fill="#fff"/>
-    <ellipse cx="34" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/>
-    <ellipse cx="66" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/>
+    <circle cx="30" cy="32" r="7" fill="#fff" fill-opacity=".92"/><circle cx="58" cy="20" r="5" fill="#fff" fill-opacity=".92"/>
+    <circle cx="74" cy="40" r="8" fill="#fff" fill-opacity=".92"/><circle cx="48" cy="46" r="4" fill="#fff" fill-opacity=".92"/>
+    <ellipse cx="41" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/><ellipse cx="59" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/>
+    <circle cx="42.6" cy="75" r="1.6" fill="#fff"/><circle cx="60.6" cy="75" r="1.6" fill="#fff"/>
+    <ellipse cx="34" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/><ellipse cx="66" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/>
     <path d="M45 85 Q50 90 55 85" fill="none" stroke="#2a1b33" stroke-width="2.5" stroke-linecap="round" style="opacity:var(--smile,1)"/>
     <path d="M45 89 Q50 84 55 89" fill="none" stroke="#2a1b33" stroke-width="2.5" stroke-linecap="round" style="opacity:var(--worry,0)"/>
   </symbol>
 </svg>
 <div id="shrooms" aria-hidden="true"></div>
 
-<main>
-  <h1>The Quest for AI 🍄🦉</h1>
-  <div class="muted">A story game you play with an AI helper</div>
-  <div class="tv">
-    <canvas id="tv" aria-label="Game screen. Walk to a numbered sign and press Space, or use the buttons below."></canvas>
-    <div class="knobs"><span>Move: arrow keys or W A S D · Choose: SPACE · Or tap a sign</span><span><i></i><i></i></span></div>
+<div class="tv">
+  <div class="screen">
+    <canvas id="tv" aria-label="Game screen. Walk to a numbered sign and press Space, or use the choices in the box below."></canvas>
+    <div class="hud" id="hud">
+      <div class="part" id="part">The Quest for AI</div>
+      <div class="meter">😬 Tension <span id="tval">0</span>/10<div class="bar"><i id="tbar" style="width:0;background:var(--heat)"></i></div></div>
+      <div class="meter">✨ Team glow <span id="gval">0</span>/10<div class="bar"><i id="gbar" style="width:0;background:var(--glow)"></i></div></div>
+    </div>
+    <div class="dialog" id="dialog" aria-live="polite"><div class="box" id="box">Loading…</div></div>
   </div>
-  <div id="app" class="panel">Loading…</div>
-</main>
+  <div class="bezel">
+    <span class="brand">THE QUEST FOR AI 🍄🦉</span>
+    <span>Move: arrows / W A S D · Next &amp; choose: SPACE · Or click</span>
+    <span class="knobs"><i></i><i></i></span>
+  </div>
+</div>
+
 <script src="tv.js"></script>
 <script>
 // Same address as the page when online or local; localhost if opened as a file.
 const API = (new URLSearchParams(location.search).get("api") || (location.protocol === "file:" ? "http://127.0.0.1:8787" : "")) + "/api";
-const app = document.getElementById("app");
-let save = null;   // the game save lives here, in the browser only
+const box = document.getElementById("box");
+let save = null;          // the game save lives here, in the browser only
+let pages = [], stage = "pages", onChoices = null, typing = null;
 
-// ---- background: stars + mushrooms (left %, bottom px, size px, colour, animation delay s)
+// ---- cute mushrooms around the TV ----
 (function drawBackground() {
-  const box = document.getElementById("shrooms");
+  const wrap = document.getElementById("shrooms");
   for (let i = 0; i < 40; i++) {
-    const s = document.createElement("i");
-    s.className = "star";
-    s.style.left = Math.random() * 100 + "%";
-    s.style.top = Math.random() * 60 + "%";
-    s.style.opacity = (0.2 + Math.random() * 0.6).toFixed(2);
-    box.append(s);
+    const s = document.createElement("i"); s.className = "star";
+    s.style.left = Math.random() * 100 + "%"; s.style.top = Math.random() * 60 + "%";
+    s.style.opacity = (0.2 + Math.random() * 0.6).toFixed(2); wrap.append(s);
   }
-  const spots = [
-    [-3, -10, 150, "#ff7aa8", 0], [9, -14, 90, "#7cc8ff", 1.2], [17, -8, 60, "#ffb35c", .5],
-    [80, -12, 160, "#b48cff", .8], [71, -10, 85, "#ff6f7d", 1.7], [92, 110, 70, "#7ef9d4", 2.1],
-    [-2, 230, 80, "#ffd166", 1.4], [45, -22, 70, "#ff9fd0", 2.4], [60, -12, 55, "#8be0ff", .3],
-  ];
-  for (const [left, bottom, size, color, delay] of spots) {
+  for (const [left, bottom, size, color, delay] of [
+    [-3, -10, 150, "#ff7aa8", 0], [9, -14, 90, "#7cc8ff", 1.2], [80, -12, 160, "#b48cff", .8],
+    [92, 110, 70, "#7ef9d4", 2.1], [-2, 230, 80, "#ffd166", 1.4], [60, -12, 55, "#8be0ff", .3]]) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("class", "m");
-    svg.setAttribute("viewBox", "0 0 100 110");
+    svg.setAttribute("class", "m"); svg.setAttribute("viewBox", "0 0 100 110");
     Object.assign(svg.style, { left: left + "%", bottom: bottom + "px", width: size + "px", color, animationDelay: delay + "s" });
-    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
-    use.setAttribute("href", "#shroom");
-    svg.append(use);
-    box.append(svg);
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use"); use.setAttribute("href", "#shroom");
+    svg.append(use); wrap.append(svg);
   }
 })();
-
-// Mushrooms react to the story: glow with team connection, worry when tension is high.
-function setMood(state) {
-  const tense = state.entropy >= 4;
-  document.body.classList.toggle("tense", tense);
-  document.body.style.setProperty("--smile", tense ? 0 : 1);
-  document.body.style.setProperty("--worry", tense ? 1 : 0);
-  document.body.style.setProperty("--gpx", (3 + state.connection * 3) + "px");
-}
 
 const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
 async function call(method, path, body) {
@@ -142,56 +155,143 @@ async function call(method, path, body) {
   if (!r.ok) throw new Error(j.error || "Something went wrong");
   return j;
 }
-function meter(label, value, color) {
-  return el("div", { style: "flex:1" }, `${label} ${value}/10`,
-    el("div", { className: "bar" }, el("i", { style: `width:${value * 10}%;background:${color}` })));
+
+// ---- power bars + mood ----
+function setHud(state, part) {
+  if (part !== undefined) document.getElementById("part").textContent = part;
+  const e = state.entropy ?? 0, c = state.connection ?? 0;
+  document.getElementById("tval").textContent = e; document.getElementById("tbar").style.width = e * 10 + "%";
+  document.getElementById("gval").textContent = c; document.getElementById("gbar").style.width = c * 10 + "%";
+  const tense = e >= 4;
+  document.body.classList.toggle("tense", tense);
+  document.body.style.setProperty("--smile", tense ? 0 : 1);
+  document.body.style.setProperty("--worry", tense ? 1 : 0);
+  document.body.style.setProperty("--gpx", (3 + c * 3) + "px");
 }
 
-async function pickCompanion() {
-  setMood({ entropy: 0, connection: 1 });
+// ---- dialog box: pages, then choices ----
+// Split long story text into short pages that fit the box.
+function paginate(text, max = 230) {
+  const out = [];
+  for (const para of text.split(/\n\s*\n/)) {
+    let cur = "";
+    for (const s of para.match(/[^.!?]+[.!?]+["')]*\s*|[^.!?]+$/g) || [para]) {
+      if ((cur + s).length > max && cur) { out.push(cur.trim()); cur = ""; }
+      cur += s;
+    }
+    if (cur.trim()) out.push(cur.trim());
+  }
+  return out;
+}
+
+function speakerOf(text) {
+  const m = text.match(/^(Sam|Max|Mia|GlowKing_99|Hoot)\b/);
+  return m ? m[1] : null;
+}
+
+function story(pagesIn, then) {
+  pages = pagesIn.filter(p => p && p.text);
+  onChoices = then;
+  stage = "pages";
+  TV.show({ ...TV_STATE, options: [] });
+  nextPage();
+}
+
+function nextPage() {
+  if (!pages.length) { stage = "choices"; TV.setPrompt(null); onChoices(); return; }
+  const p = pages.shift();
+  const label = el("div", { className: "who " + (p.kind || "") }, p.who || "Story");
+  const say = el("div", { className: "say " + (p.kind || "") });
+  box.replaceChildren(label, say, el("div", { className: "more" }, "▼ SPACE"));
+  TV.setPrompt("Press SPACE (or click the box) to continue");
+  typeOut(say, p.text);
+}
+
+function typeOut(node, text) {
+  clearInterval(typing?.id);
+  let i = 0;
+  typing = { node, text, id: setInterval(() => {
+    i += 2; node.textContent = text.slice(0, i);
+    if (i >= text.length) { clearInterval(typing.id); typing = null; }
+  }, 16) };
+}
+
+function advance() {
+  if (stage !== "pages") return false;
+  if (typing) { clearInterval(typing.id); typing.node.textContent = typing.text; typing = null; return true; }
+  nextPage(); return true;
+}
+TV.onAction = advance;
+document.getElementById("dialog").addEventListener("click", e => { if (!e.target.closest("button")) advance(); });
+
+function showChoices(title, items, extra) {
+  const buttons = items.map((it, i) => el("button", { onclick: it.pick }, el("b", {}, `${i + 1}`),
+    el("span", {}, it.label, it.sub ? el("small", {}, it.sub) : "")));
+  box.replaceChildren(el("div", { className: "who" }, title), ...(extra ? [extra] : []), el("div", { className: "choices" }, ...buttons));
+  TV.show({ ...TV_STATE, options: items.map((it, i) => ({ label: it.label, button: buttons[i], pick: it.pick })) });
+}
+
+// ---- game flow ----
+let TV_STATE = { sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [] };
+
+async function menu() {
+  save = null;
+  TV_STATE = { sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [] };
+  setHud(TV_STATE.state, "The Quest for AI");
   const [{ companions }, { scenarios }] = await Promise.all([call("GET", "/companions"), call("GET", "/scenarios")]);
   const sc = scenarios[0];
-  const buttons = companions.map(c => el("button", { onclick: () => start(sc.id, c.id) }, `${c.name} — ${c.title}`));
-  app.replaceChildren(el("h2", {}, sc.title), el("p", {}, sc.summary), el("p", { className: "muted" }, "Choose your AI helper:"), ...buttons);
-  TV.show({ sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [],
-            options: companions.map((c, i) => ({ label: `${c.name}, ${c.title}`, button: buttons[i], pick: () => start(sc.id, c.id) })) });
+  story([
+    { who: sc.title, kind: "narrator", text: sc.summary },
+    { who: "How to play", kind: "narrator", text: "Walk your orange mushroom to a numbered sign and press SPACE. Or click a sign, or press 1, 2, 3, 4. Kind choices make the roots under the ground glow." },
+  ], () => showChoices("Pick your AI helper", companions.map(c => ({
+    label: `${c.name}: ${c.title}`, sub: c.style, pick: () => start(sc.id, c.id) }))));
 }
+
 async function start(scenarioId, companionId) { render(await call("POST", "/start", { scenario_id: scenarioId, companion_id: companionId })); }
+
 async function choose(id) {
-  app.querySelectorAll("button").forEach(b => b.disabled = true);   // AI may take a few seconds
+  if (stage !== "choices") return;
+  stage = "busy";
+  box.querySelectorAll("button").forEach(b => b.disabled = true);
   TV.setBusy(true);
   try { render(await call("POST", "/choose", { save, choice_id: id })); }
-  catch (e) { app.prepend(el("p", { className: "muted" }, e.message)); app.querySelectorAll("button").forEach(b => b.disabled = false); }
+  catch (e) {
+    stage = "choices"; box.querySelectorAll("button").forEach(b => b.disabled = false);
+    box.prepend(el("div", { className: "who" }, e.message));
+  }
   finally { TV.setBusy(false); }
 }
 
 function render(v) {
   save = v.save;
-  setMood(v.state);
-  const kids = [el("div", { className: "meters" },
-    meter("Tension", v.state.entropy, "var(--heat)"), meter("Team glow", v.state.connection, "var(--glow)"))];
+  const sceneId = v.finished ? "ending" : v.scene.id;
+  TV_STATE = { sceneId, state: v.state, last: v.last, history: v.save.history, ending: v.ending };
+  const helper = v.companion.name;
+  const out = [];
   if (v.last) {
-    if (v.last.reaction) kids.push(el("p", { className: "muted" }, v.last.reaction));
-    kids.push(el("p", { className: "companion" }, `${v.companion.name}: “${v.last.companion_note}”`));
+    if (v.last.reaction) out.push({ who: speakerOf(v.last.reaction) || "What happens", kind: speakerOf(v.last.reaction) ? "" : "narrator", text: v.last.reaction });
+    out.push({ who: helper, kind: "helper", text: v.last.companion_note });
   }
   if (v.finished) {
     const e = v.ending;
-    kids.push(el("h2", {}, e.title), el("p", {}, e.text), el("p", { className: "muted" }, "Things to think about:"),
-      el("ul", {}, ...e.reflection_questions.map(q => el("li", {}, q))),
-      el("button", { onclick: pickCompanion }, "Play again"));
-  } else {
-    const s = v.scene;
-    kids.push(el("p", { className: "story" }, s.text));
-    if (s.companion_line) kids.push(el("p", { className: "companion" }, `${v.companion.name}: “${s.companion_line}”`));
-    const buttons = s.choices.map((c, i) => el("button", { onclick: () => choose(c.id) }, `${i + 1}. ${c.text}`));
-    kids.push(...buttons);
-    TV.show({ sceneId: s.id, state: v.state, last: v.last, history: v.save.history,
-              options: s.choices.map((c, i) => ({ label: c.text, button: buttons[i], pick: () => choose(c.id) })) });
+    setHud(v.state, "The End: " + e.title);
+    out.push(...paginate(e.text).map(t => ({ who: e.title, kind: "narrator", text: t })));
+    story(out, () => showChoices("Things to think about", [{ label: "Play again", pick: menu }],
+      el("ul", { className: "reflect" }, ...e.reflection_questions.map(q => el("li", {}, q)))));
+    return;
   }
-  if (v.finished) TV.show({ sceneId: "ending", state: v.state, last: v.last, history: v.save.history, ending: v.ending, options: [] });
-  app.replaceChildren(...kids);
+  const s = v.scene;
+  let text = s.text, part;
+  const m = text.match(/^(Part \d+: [^.]+)\.\s*/);
+  if (m) { part = m[1]; text = text.slice(m[0].length); }
+  setHud(v.state, part);
+  const who = s.speaker === "narrator" ? "Story" : s.speaker === "WiseOwl" ? "Hoot the owl" : s.speaker;
+  out.push(...paginate(text).map(t => ({ who, kind: s.speaker === "narrator" ? "narrator" : "", text: t })));
+  if (s.companion_line) out.push({ who: helper, kind: "helper", text: s.companion_line });
+  story(out, () => showChoices("What do you do?", s.choices.map(c => ({ label: c.text, pick: () => choose(c.id) }))));
 }
-pickCompanion().catch(e => app.textContent = `${e.message}. Is the game server running? (python -m tqfai serve)`);
+
+menu().catch(e => box.textContent = `${e.message}. Is the game server running? (python -m tqfai serve)`);
 </script>
 </body>
 </html>
