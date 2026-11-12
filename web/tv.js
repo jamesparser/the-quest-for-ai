@@ -111,6 +111,25 @@
     return owner;
   }
 
+  // How healthy each mushroom's root is: 1 = glowing, 0.5 = dim, 0 = cold patch.
+  // Follows the story: hurting someone dims their root, repairing it lights it back up.
+  const ROOT_EVENTS = {
+    c_pile_on: { Sam: .5 }, c_keep_quiet: { Sam: .5 }, c_vote_kick: { Sam: 0 }, c_blame: { Sam: 0 },
+    c_suggest_role: { Sam: 1 }, c_tell_team_gently: { Sam: 1 }, c_own_it: { Sam: 1 }, c_sorry_after_vote: { Sam: 1 },
+    c_stop_sam: { Sam: 1 }, c_friend_sam: { Sam: 1 },
+    c_roll: { Mia: .5 }, c_ask_team: { Mia: .5 }, c_grab: { Mia: .5 }, c_keep_it: { Mia: 0 },
+    c_comfort_mia: { Mia: 1 }, c_give_mia: { Mia: 1 }, c_give_back: { Mia: 1 },
+    c_keep_arguing: { Max: .5 }, c_complain: { Max: .5 }, c_ignore_max: { Max: .5 }, c_let_quit: { Max: .5 }, c_mock_max: { Max: 0 },
+    c_hear_max: { Max: 1 }, c_cheer_max: { Max: 1 }, c_explain_max: { Max: 1 }, c_calm_max: { Max: 1 }, c_revive_max: { Max: 1 },
+  };
+  const SCENE_ROOTS = { s_heat: { Sam: .5 } };   // the story says Sam's roots turn grey here
+  function rootHealth(history, sceneId) {
+    const h = { you: 1, Sam: 1, Max: 1, Mia: 1 };
+    for (const step of history || []) Object.assign(h, ROOT_EVENTS[step.choice_id] || {});
+    for (const [n, v] of Object.entries(SCENE_ROOTS[sceneId] || {})) h[n] = Math.min(h[n], v);
+    return h;
+  }
+
   function signSpots(n) {
     if (n <= 0) return [];
     const left = 22, right = 190, y = 50;
@@ -295,16 +314,38 @@
 
     const onScreen = shade ? ["you"] : ["you", "Sam", "Max", "Mia"];
 
-    // roots between everyone: colour = team connection
+    // Roots under the ground. Each mushroom has its own root: it glows with the team,
+    // and goes dim or cold when that person gets hurt (see rootHealth).
     const conn = Math.min(10, st.connection ?? 0) / 10;
-    const rootY = 126;
-    ctx.fillStyle = lost ? "#555" : `rgb(${Math.round(90 + 36 * conn)},${Math.round(80 + 169 * conn)},${Math.round(70 + 142 * conn)})`;
-    const xs = onScreen.map(n => (n === "you" ? player.x : CAST[n].home) + 12).sort((a, b) => a - b);
-    for (const x of xs) ctx.fillRect(Math.round(x), GROUND + 4, 1, rootY - GROUND - 4);
-    if (xs.length > 1) ctx.fillRect(Math.round(xs[0]), rootY, Math.round(xs[xs.length - 1] - xs[0]) + 1, 1);
-    if (!shade && !lost) ctx.fillRect(Math.round(xs[xs.length - 1]), rootY, 236 - Math.round(xs[xs.length - 1]), 1);
-    if (pulse > 0 && xs.length > 1) {
-      const px = xs[0] + (xs[xs.length - 1] - xs[0]) * ((1 - pulse) * 2 % 1);
+    const rootY = 126, top = GROUND + 4;
+    const glowRGB = lost ? [85, 85, 85] : [Math.round(90 + 36 * conn), Math.round(80 + 169 * conn), Math.round(70 + 142 * conn)];
+    const coldRGB = [30, 26, 34];
+    const mix = h => `rgb(${glowRGB.map((g, i) => Math.round(coldRGB[i] + (g - coldRGB[i]) * h)).join(",")})`;
+    const health = rootHealth(world.history, id);
+    const flicker = id === "intro" && Math.floor(t * 6) % 4 === 0;
+    const roots = onScreen.map(n => ({ n, x: Math.round((n === "you" ? player.x : CAST[n].home) + 12), h: health[n] ?? 1 }))
+                          .sort((a, b) => a.x - b.x);
+    // cold patches in the soil under hurt mushrooms
+    for (const r of roots) if (r.h < 1) {
+      ctx.fillStyle = `rgba(6,4,14,${0.8 * (1 - r.h)})`;
+      ctx.fillRect(r.x - 12, top, 25, WORLD_H - top - 11);
+      if (r.h === 0 && Math.floor(t * 2) % 2) { ctx.fillStyle = "#8fa3c8"; ctx.fillRect(r.x - 6, top + 6, 1, 1); ctx.fillRect(r.x + 5, top + 12, 1, 1); ctx.fillRect(r.x - 3, top + 15, 1, 1); }
+    }
+    // horizontal links: each piece takes the colour of the weaker end
+    for (let i = 0; i < roots.length - 1; i++) {
+      const a = roots[i], b = roots[i + 1];
+      ctx.fillStyle = mix(Math.min(a.h, b.h)); ctx.globalAlpha = flicker ? .35 : 1;
+      ctx.fillRect(a.x, rootY, b.x - a.x + 2, 2);
+    }
+    if (!shade && !lost && roots.length) { // link to the Mother Mushroom
+      const last = roots[roots.length - 1];
+      ctx.fillStyle = mix(last.h); ctx.fillRect(last.x, rootY, 236 - last.x, 2);
+    }
+    // each mushroom's own root
+    for (const r of roots) { ctx.fillStyle = mix(r.h); ctx.fillRect(r.x, top, 2, rootY - top); }
+    ctx.globalAlpha = 1;
+    if (pulse > 0 && roots.length > 1) {
+      const px = roots[0].x + (roots[roots.length - 1].x - roots[0].x) * ((1 - pulse) * 2 % 1);
       ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(px) - 1, rootY - 1, 3, 3);
     }
 
