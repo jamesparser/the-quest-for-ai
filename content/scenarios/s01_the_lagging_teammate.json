@@ -1,0 +1,944 @@
+{
+  "id": "s01_the_lagging_teammate",
+  "version": "0.2.0",
+  "title": "Squad Night in Sporelands",
+  "summary": "You and your online squad are little mushroom heroes protecting the Mother Mushroom. In one match you'll face a teammate with slow internet, a rare treasure, a stranger with a 'free gift', a giant boss and a teammate about to quit. Kind choices make the roots between you glow.",
+  "audience": {
+    "min_age": 9,
+    "max_age": 12,
+    "content_notes": [
+      "mild in-game name-calling (no slurs)",
+      "a stranger tries an online scam; the game models blocking and telling a grown-up",
+      "no real-world personal info is ever requested from the player"
+    ]
+  },
+  "learning_goals": [
+    "Notice when online chat is heating up.",
+    "Ask before assuming.",
+    "Share fairly when everyone wants the same thing.",
+    "Spot a stranger's scam and protect your friends.",
+    "Help a teammate who is about to rage-quit.",
+    "Know that stepping away (the Shade) is always allowed."
+  ],
+  "initial_state": {
+    "entropy": 1,
+    "connection": 0,
+    "shade": 0
+  },
+  "start": "intro",
+  "scenes": {
+    "intro": {
+      "speaker": "narrator",
+      "background": "mushroom_forest",
+      "text": "Part 1: The Lag. You're at home, playing the online game Sporelands with your squad: Max, Sam and Mia. In Sporelands, every player is a little mushroom hero. Your job is to protect the Mother Mushroom from a swarm of bugs. Under the ground, glowing roots connect all four of you. When the squad works well together, the roots glow and everyone gets stronger.\n\nThe bugs are coming. But Sam's internet is slow, so Sam's mushroom keeps freezing. Max types in team chat: \"sam ur trash. kick them.\" (Kick = vote to throw a player out of the match.) Mia sends a laughing emoji.",
+      "companion_lines": {
+        "default": "The roots just flickered. Something's off in the network.",
+        "Protector": "Chat's getting rough. Whatever you do, I'm right here.",
+        "Bookworm": "Sam froze three times this match. That's a pattern, not a personality.",
+        "ScientificallyAttuned": "I can feel the hum going jagged. How do you think Sam feels reading that?",
+        "ClassClown": "Okay, chat's getting spicy. Like, bad-spicy, not taco-spicy."
+      },
+      "choices": [
+        {
+          "id": "c_ask_sam",
+          "text": "Send Sam a private message: \"hey, you ok? lag?\"",
+          "next": "s_sam_reply",
+          "perspectives": [
+            "curiosity",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "A little typing bubble appears next to Sam's name."
+        },
+        {
+          "id": "c_pile_on",
+          "text": "Type \"lol yeah kick them\"",
+          "next": "s_heat",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 3
+          },
+          "reaction": "Max sends three fire emojis. Sam's name goes grey for a second."
+        },
+        {
+          "id": "c_step_into_shade",
+          "text": "Take a break in the Shade (a quiet hiding spot in the game)",
+          "next": "s_shade",
+          "perspectives": [
+            "self_care"
+          ],
+          "effects": {
+            "shade": 1,
+            "entropy": -1
+          },
+          "reaction": "The noise of the chat fades behind a curtain of soft blue light."
+        },
+        {
+          "id": "c_speak_up",
+          "text": "Tell Max: \"not cool, they're lagging, not trash\"",
+          "next": "s_max_pushback",
+          "perspectives": [
+            "boundaries",
+            "fairness"
+          ],
+          "effects": {
+            "entropy": 1,
+            "connection": 1
+          },
+          "reaction": "Max's mushroom turns to face yours."
+        }
+      ]
+    },
+    "s_sam_reply": {
+      "speaker": "Sam",
+      "background": "mushroom_forest",
+      "text": "Sam sends you a private message that only you can see: \"sorry!! my brother's on a video call and our wifi is awful. i'm trying.\" In team chat, Max is still complaining.",
+      "companion_lines": {
+        "default": "So it wasn't Sam being bad at the game. Good thing you asked.",
+        "Bookworm": "Hypothesis confirmed: wifi problem, not player problem.",
+        "ScientificallyAttuned": "You can almost hear the relief in that message."
+      },
+      "choices": [
+        {
+          "id": "c_suggest_role",
+          "text": "Suggest Sam guards the roots, a job that doesn't need fast reactions",
+          "next": "s_regroup",
+          "perspectives": [
+            "fairness",
+            "repair"
+          ],
+          "effects": {
+            "connection": 2
+          },
+          "reaction": "Sam: \"oh that could work!!\""
+        },
+        {
+          "id": "c_tell_team_gently",
+          "text": "Tell the squad \"Sam's wifi is struggling, let's work around it\"",
+          "next": "s_regroup",
+          "perspectives": [
+            "empathy",
+            "boundaries"
+          ],
+          "effects": {
+            "connection": 1,
+            "entropy": -1
+          },
+          "reaction": "Mia: \"ohh ok fair\". Max stops typing."
+        },
+        {
+          "id": "c_keep_quiet",
+          "text": "Keep it to yourself and keep playing",
+          "next": "s_heat",
+          "perspectives": [],
+          "effects": {
+            "entropy": 1
+          },
+          "reaction": "Max types: \"why are we still carrying sam\""
+        }
+      ]
+    },
+    "s_heat": {
+      "speaker": "narrator",
+      "background": "forest_bugs",
+      "text": "Team chat is full of angry messages in CAPITAL LETTERS. Sam stops talking. Under the ground, the roots near Sam turn grey, and bugs start getting past your squad. Max: \"START A VOTE TO KICK SAM.\"",
+      "companion_lines": {
+        "default": "The network's running hot. We can still change the temperature.",
+        "Protector": "This is a glitch zone. Want me to hold the line while you think?",
+        "ClassClown": "Is it just me or is the chat louder than the actual monsters?"
+      },
+      "choices": [
+        {
+          "id": "c_vote_kick",
+          "text": "Start the vote kick",
+          "next": "s_vote_fails",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2,
+            "connection": -2
+          },
+          "condition": {
+            "min": {
+              "entropy": 3
+            }
+          },
+          "reaction": "A big red VOTE KICK: SAM? box pops up for everyone."
+        },
+        {
+          "id": "c_call_break",
+          "text": "Call a one-minute Shade break for the whole squad",
+          "next": "s_shade",
+          "perspectives": [
+            "self_care",
+            "repair"
+          ],
+          "effects": {
+            "entropy": -2,
+            "shade": 1
+          },
+          "reaction": "Mia: \"ok yeah, break.\""
+        },
+        {
+          "id": "c_own_it",
+          "text": "Type \"my bad, I piled on. sorry Sam\"",
+          "next": "s_regroup",
+          "perspectives": [
+            "repair",
+            "empathy"
+          ],
+          "effects": {
+            "entropy": -2,
+            "connection": 2
+          },
+          "reaction": "Sam: \"thx\" and their mushroom waves."
+        },
+        {
+          "id": "c_mute_report",
+          "text": "Mute Max and report the messages",
+          "next": "s_regroup",
+          "perspectives": [
+            "boundaries"
+          ],
+          "effects": {
+            "entropy": -1
+          },
+          "reaction": "Max's messages disappear from your screen. He's still in the match, but you don't have to read it."
+        }
+      ]
+    },
+    "s_vote_fails": {
+      "speaker": "narrator",
+      "background": "forest_bugs",
+      "text": "To kick a player, three people must vote yes. Mia votes no, so Sam stays. But Sam saw the vote. Sam turns off their microphone, and the roots under Sam's mushroom go dark and cold.",
+      "companion_lines": {
+        "default": "Sam's still here. But that one stung.",
+        "ScientificallyAttuned": "I can feel a cold spot in the network where Sam is standing."
+      },
+      "choices": [
+        {
+          "id": "c_sorry_after_vote",
+          "text": "Message Sam: \"that was mean of me. sorry.\"",
+          "next": "s_regroup",
+          "perspectives": [
+            "repair",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 2,
+            "entropy": -1
+          },
+          "reaction": "A long pause. Then Sam: \"ok. thanks for saying that.\""
+        },
+        {
+          "id": "c_shrug",
+          "text": "Shrug it off and keep playing",
+          "next": "s_regroup",
+          "perspectives": [],
+          "effects": {
+            "entropy": 1
+          },
+          "reaction": "Nobody says anything. The roots stay cold."
+        }
+      ]
+    },
+    "s_shade": {
+      "speaker": "WiseOwl",
+      "background": "the_shade",
+      "text": "You step into the Shade, a quiet hidden cave under the Mother Mushroom where players can take a break. A wise old owl named Hoot lives here. Hoot says: \"Under the ground, real mushrooms share food and water through their roots, even with the weakest ones. That's how the whole forest stays alive. Nobody wins alone. What will you do when you go back up?\"",
+      "companion_lines": {
+        "default": "It's quieter here. Take your time.",
+        "ScientificallyAttuned": "Breathe with the hum for a second. In... and out.",
+        "Protector": "Nothing gets in here. You're safe to think."
+      },
+      "choices": [
+        {
+          "id": "c_return_curious",
+          "text": "Go back and ask Sam what's going on",
+          "next": "s_sam_reply",
+          "perspectives": [
+            "curiosity",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "You climb back up the roots toward the squad."
+        },
+        {
+          "id": "c_squad_rule",
+          "text": "Suggest a squad rule: \"no name-calling, we cover for lag\"",
+          "next": "s_regroup",
+          "perspectives": [
+            "fairness",
+            "boundaries"
+          ],
+          "effects": {
+            "connection": 1,
+            "entropy": -1
+          },
+          "reaction": "Mia: \"+1\". Sam: \"+1!!\". Max: \"...fine.\""
+        },
+        {
+          "id": "c_log_off",
+          "text": "Log off for tonight",
+          "next": "e_rest",
+          "perspectives": [
+            "self_care"
+          ],
+          "effects": {
+            "shade": 1
+          },
+          "reaction": "The screen fades to a soft glow."
+        }
+      ]
+    },
+    "s_max_pushback": {
+      "speaker": "Max",
+      "background": "mushroom_forest",
+      "text": "Max types back: \"whatever. I've lost FIVE matches today. I just want to win one.\" For a second, Max sounds less mean and more... tired.",
+      "companion_lines": {
+        "default": "Huh. Max is having a rough day too.",
+        "Bookworm": "New data: Max's frustration might not really be about Sam.",
+        "ClassClown": "Five losses? Oof. That's like stubbing your toe five times."
+      },
+      "choices": [
+        {
+          "id": "c_hear_max",
+          "text": "\"Five losses is rough. Let's win this one together, all four of us.\"",
+          "next": "s_regroup",
+          "perspectives": [
+            "empathy",
+            "repair"
+          ],
+          "effects": {
+            "connection": 2,
+            "entropy": -1
+          },
+          "reaction": "Max: \"...ok. what's the plan.\""
+        },
+        {
+          "id": "c_block_max",
+          "text": "Block Max's chat. You don't want to read that.",
+          "next": "s_regroup",
+          "perspectives": [
+            "boundaries"
+          ],
+          "effects": {
+            "entropy": -1
+          },
+          "reaction": "Max's messages vanish from your screen. He's still in the match."
+        },
+        {
+          "id": "c_keep_arguing",
+          "text": "\"You're the trash one, Max\"",
+          "next": "s_heat",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2
+          },
+          "reaction": "Max: \"WOW ok\""
+        }
+      ]
+    },
+    "s_regroup": {
+      "speaker": "narrator",
+      "background": "forest_glowing",
+      "text": "Part 2: The Treasure. Your squad beats the first swarm of bugs. Sam now guards the roots, a job where slow internet doesn't matter. Then something shiny drops where the last bug was: a Golden Cap, the rarest hat in the game. Only one player can have it. Mia types: \"omg I've NEVER found one of those.\"",
+      "companion_lines": {
+        "default": "Ooh, shiny. Four players, one hat. This could go a few ways.",
+        "Bookworm": "Only about one in five hundred bugs drops a Golden Cap. Just saying.",
+        "ClassClown": "Can we cut it into four tiny hats? No? Okay."
+      },
+      "choices": [
+        {
+          "id": "c_roll",
+          "text": "\"Let's all roll for it. Fair chance for everyone.\"",
+          "next": "s_loot_roll",
+          "perspectives": [
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Four dice appear over everyone's heads."
+        },
+        {
+          "id": "c_give_mia",
+          "text": "Mia's never found one. Offer the Golden Cap to her.",
+          "next": "s_loot_mia",
+          "perspectives": [
+            "empathy",
+            "fairness"
+          ],
+          "effects": {
+            "connection": 2
+          },
+          "reaction": "Mia's mushroom freezes for a second, in shock."
+        },
+        {
+          "id": "c_grab",
+          "text": "Grab it fast before anyone else can",
+          "next": "s_loot_grab",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2
+          },
+          "reaction": "You dash in and the Golden Cap pops onto your mushroom."
+        },
+        {
+          "id": "c_ask_team",
+          "text": "Ask the squad: \"how should we decide?\"",
+          "next": "s_loot_roll",
+          "perspectives": [
+            "curiosity",
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Mia: \"roll for it?\" Everyone agrees."
+        }
+      ]
+    },
+    "s_loot_roll": {
+      "speaker": "narrator",
+      "background": "forest_glowing",
+      "text": "Everyone rolls a dice in the game. Max rolls 98 out of 100 and wins the Golden Cap. He types \"EZ\" (easy). Mia sends a sad face and goes quiet.",
+      "companion_lines": {
+        "default": "Fair roll. Still, Mia looks a bit down.",
+        "ScientificallyAttuned": "Winning and losing can happen in the same second."
+      },
+      "choices": [
+        {
+          "id": "c_cheer_max",
+          "text": "Say \"nice roll, Max!\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Max: \"ty ty\". He does a little bow."
+        },
+        {
+          "id": "c_comfort_mia",
+          "text": "Message Mia: \"next one's yours. we'll help you find it.\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "empathy"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Mia: \"really? ok :)\""
+        },
+        {
+          "id": "c_complain",
+          "text": "Say \"that roll was rigged\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 1
+          },
+          "reaction": "Max: \"lol cope\""
+        }
+      ]
+    },
+    "s_loot_mia": {
+      "speaker": "Mia",
+      "background": "forest_glowing",
+      "text": "Mia: \"wait really?? THANK YOU\" Her mushroom does a happy dance wearing the Golden Cap. Max types: \"why does SHE get it\"",
+      "companion_lines": {
+        "default": "Look at that dance. Giving can feel as good as getting.",
+        "Protector": "Max isn't happy. Want to handle that?"
+      },
+      "choices": [
+        {
+          "id": "c_explain_max",
+          "text": "Tell Max: \"she's never had one. you'll get the next one.\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "fairness",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Max: \"...ok fine. next one's mine though.\""
+        },
+        {
+          "id": "c_ignore_max",
+          "text": "Ignore Max and keep going",
+          "next": "s_stranger",
+          "perspectives": [],
+          "effects": {},
+          "reaction": "Max grumbles but follows."
+        }
+      ]
+    },
+    "s_loot_grab": {
+      "speaker": "narrator",
+      "background": "forest_glowing",
+      "text": "The Golden Cap looks amazing on your mushroom. But team chat goes quiet. Mia: \"oh. ok.\" The roots under Mia's mushroom go a little darker.",
+      "companion_lines": {
+        "default": "You got the Golden Cap. The squad got quiet. Both things are true.",
+        "ClassClown": "Nice hat. Weird vibe."
+      },
+      "choices": [
+        {
+          "id": "c_give_back",
+          "text": "Give the Golden Cap to Mia: \"sorry, that was greedy\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "repair",
+            "empathy"
+          ],
+          "effects": {
+            "entropy": -2,
+            "connection": 2
+          },
+          "reaction": "Mia: \"wait, really? thank you!!\""
+        },
+        {
+          "id": "c_keep_it",
+          "text": "Say \"I found it first\"",
+          "next": "s_stranger",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 1,
+            "connection": -1
+          },
+          "reaction": "Mia doesn't reply."
+        }
+      ]
+    },
+    "s_stranger": {
+      "speaker": "narrator",
+      "background": "lobby_chat",
+      "text": "Part 3: The Stranger. While you wait for the next swarm, a player nobody knows joins the chat. Their name is GlowKing_99. They write: \"Hey! I can give ALL of you free Golden Caps. Just send me your login details and tell me which town you're in.\" Sam types: \"wait really??\"",
+      "companion_lines": {
+        "default": "Hmm. Free stuff from a stranger who wants your login? My roots are tingling.",
+        "Protector": "Red flag. Big one. I'm standing in front of the squad.",
+        "Bookworm": "Fact: real games never ask for your login in chat.",
+        "ScientificallyAttuned": "Something about this feels wrong. Trust that feeling.",
+        "ClassClown": "Free hats? And I'm secretly a dragon."
+      },
+      "choices": [
+        {
+          "id": "c_warn_team",
+          "text": "Tell the squad: \"Don't answer. That's a scam.\"",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries",
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Mia: \"oh yeah, good catch.\""
+        },
+        {
+          "id": "c_block_report",
+          "text": "Block and report GlowKing_99",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries"
+          ],
+          "effects": {},
+          "reaction": "A message pops up: \"Thanks, our team will look at this player.\""
+        },
+        {
+          "id": "c_chat_back",
+          "text": "Ask GlowKing_99: \"how do the free hats work?\"",
+          "next": "s_stranger_push",
+          "perspectives": [
+            "curiosity"
+          ],
+          "effects": {
+            "entropy": 1
+          },
+          "reaction": "GlowKing_99 starts typing right away."
+        },
+        {
+          "id": "c_tell_adult",
+          "text": "Pause the game and tell a grown-up at home what's happening",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries",
+            "self_care"
+          ],
+          "effects": {
+            "shade": 1
+          },
+          "reaction": "Your grown-up helps you block and report the stranger."
+        }
+      ]
+    },
+    "s_stranger_push": {
+      "speaker": "GlowKing_99",
+      "background": "lobby_chat",
+      "text": "GlowKing_99: \"Real friends share. Everyone else already sent theirs. Hurry, the offer ends in ONE minute!\" Sam: \"should I??\"",
+      "companion_lines": {
+        "default": "Notice the rush? \"Hurry\" and \"real friends share\" are tricks to stop you thinking.",
+        "Protector": "Sam's about to walk into a trap."
+      },
+      "choices": [
+        {
+          "id": "c_stop_sam",
+          "text": "Tell Sam: \"Don't! Real friends don't ask for your login.\"",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 2
+          },
+          "reaction": "Sam: \"oh no you're right. thank you.\""
+        },
+        {
+          "id": "c_block_now",
+          "text": "Block and report GlowKing_99 now",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries"
+          ],
+          "effects": {
+            "entropy": -1
+          },
+          "reaction": "GlowKing_99 vanishes from the chat."
+        },
+        {
+          "id": "c_tell_adult_late",
+          "text": "Pause and get a grown-up",
+          "next": "s_stranger_after",
+          "perspectives": [
+            "boundaries",
+            "self_care"
+          ],
+          "effects": {
+            "shade": 1
+          },
+          "reaction": "Your grown-up helps you report the stranger."
+        }
+      ]
+    },
+    "s_stranger_after": {
+      "speaker": "narrator",
+      "background": "lobby_chat",
+      "text": "GlowKing_99 is gone. Mia: \"that was so sketchy.\" Sam: \"I almost did it. thanks.\" Then the ground starts to shake...",
+      "companion_lines": {
+        "default": "Squad's safe. Now, about that giant swamp monster...",
+        "ClassClown": "Oh good, a boss. I was getting bored of being safe."
+      },
+      "choices": [
+        {
+          "id": "c_thank_team",
+          "text": "Say \"good teamwork, everyone\"",
+          "next": "s_boss",
+          "perspectives": [
+            "repair"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Three thumbs-up appear in chat."
+        },
+        {
+          "id": "c_onward",
+          "text": "Get ready for the boss",
+          "next": "s_boss",
+          "perspectives": [],
+          "effects": {},
+          "reaction": "You check your gear. One revive potion left."
+        }
+      ]
+    },
+    "s_boss": {
+      "speaker": "Max",
+      "background": "rot_swamp",
+      "text": "Part 4: The Boss. The Rot King climbs out of the swamp: a giant monster made of rotten logs. Max runs at it alone and gets knocked out in five seconds. Max types: \"THIS TEAM IS TRASH. I'M QUITTING.\" He's about to press the Leave button.",
+      "companion_lines": {
+        "default": "Max is about to rage-quit. Without him, this boss gets a lot harder.",
+        "Protector": "He went in alone. That's why it hurt.",
+        "ScientificallyAttuned": "That's not anger at us. That's the five losses talking."
+      },
+      "choices": [
+        {
+          "id": "c_revive_max",
+          "text": "Use your only revive potion (it brings a knocked-out player back) on Max",
+          "next": "s_boss_mid",
+          "perspectives": [
+            "empathy",
+            "fairness"
+          ],
+          "effects": {
+            "connection": 2
+          },
+          "reaction": "Max pops back up. \"...wait, you used your last one on me?\""
+        },
+        {
+          "id": "c_calm_max",
+          "text": "Tell Max: \"that boss is brutal. take a breath, we need you.\"",
+          "next": "s_boss_mid",
+          "perspectives": [
+            "empathy",
+            "repair"
+          ],
+          "effects": {
+            "connection": 1,
+            "entropy": -1
+          },
+          "reaction": "Max's cursor stops. \"...ok. one more try.\""
+        },
+        {
+          "id": "c_let_quit",
+          "text": "Say \"fine, quit then\"",
+          "next": "s_boss_mid",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2,
+            "connection": -1
+          },
+          "reaction": "Max doesn't leave, but he doesn't talk either."
+        },
+        {
+          "id": "c_mock_max",
+          "text": "Type \"lol Max died first\"",
+          "next": "s_boss_mid",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2,
+            "connection": -2
+          },
+          "reaction": "Max: \"shut up\". Mia: \"guys...\""
+        }
+      ]
+    },
+    "s_boss_mid": {
+      "speaker": "narrator",
+      "background": "rot_swamp",
+      "text": "The Rot King is half beaten, but bugs are everywhere. It's time for the final attack. Will your squad move together?",
+      "companion_lines": {
+        "default": "This is it. How the squad feels about each other right now really matters.",
+        "Bookworm": "Teams that talk to each other win more boss fights. I read that somewhere. Probably."
+      },
+      "choices": [
+        {
+          "id": "c_final_plan",
+          "text": "Call the plan: Sam guards the roots, Mia heals, you and Max attack",
+          "next": "s_win",
+          "perspectives": [
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "condition": {
+            "min": {
+              "connection": 5
+            }
+          },
+          "reaction": "Everyone moves at once, like one big network."
+        },
+        {
+          "id": "c_ask_ideas",
+          "text": "Ask: \"what's our plan, team?\"",
+          "next": "s_win",
+          "perspectives": [
+            "curiosity"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "condition": {
+            "min": {
+              "connection": 5
+            }
+          },
+          "reaction": "Mia has a great idea. Everyone goes with it."
+        },
+        {
+          "id": "c_final_charge",
+          "text": "Everyone just charges in",
+          "next": "s_lose",
+          "perspectives": [],
+          "effects": {},
+          "condition": {
+            "max": {
+              "connection": 4
+            }
+          },
+          "reaction": "Four players run in four different directions."
+        },
+        {
+          "id": "c_log_off_late",
+          "text": "You feel really stressed. Log off for tonight.",
+          "next": "e_rest",
+          "perspectives": [
+            "self_care"
+          ],
+          "effects": {
+            "shade": 1
+          },
+          "reaction": "You close the game. Your heart slows down."
+        }
+      ]
+    },
+    "s_win": {
+      "speaker": "narrator",
+      "background": "forest_glowing",
+      "text": "Part 5: After the Match. The Rot King falls apart into a pile of logs. VICTORY! Back in the lobby (the waiting room after a match), Sam types: \"that was the best match ever.\" Max: \"gg. you're actually good.\"",
+      "companion_lines": {
+        "default": "We did it! Feel how bright the roots are?",
+        "ClassClown": "VICTORY DANCE. Everyone. Now."
+      },
+      "choices": [
+        {
+          "id": "c_friend_sam",
+          "text": "Send Sam a friend request",
+          "next": "e_mycelial",
+          "perspectives": [
+            "repair",
+            "empathy"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Sam accepts in one second."
+        },
+        {
+          "id": "c_gg_all",
+          "text": "Type \"gg everyone, rematch tomorrow?\"",
+          "next": "e_mycelial",
+          "perspectives": [
+            "fairness"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Three \"YES\" messages appear."
+        },
+        {
+          "id": "c_leave_quiet",
+          "text": "Leave without saying anything",
+          "next": "e_quiet_win",
+          "perspectives": [],
+          "effects": {},
+          "reaction": "The lobby fades out."
+        }
+      ]
+    },
+    "s_lose": {
+      "speaker": "narrator",
+      "background": "rot_swamp",
+      "text": "Part 5: After the Match. The Rot King wins. DEFEAT. Back in the lobby (the waiting room after a match), nobody types for a moment. Then Max: \"whatever.\"",
+      "companion_lines": {
+        "default": "We lost. That happens. What happens next is still up to us.",
+        "ScientificallyAttuned": "Losing hurts. It hurts less when nobody is blamed."
+      },
+      "choices": [
+        {
+          "id": "c_gg_anyway",
+          "text": "Type \"gg, we'll get it next time\"",
+          "next": "e_lost_together",
+          "perspectives": [
+            "repair"
+          ],
+          "effects": {
+            "connection": 1
+          },
+          "reaction": "Sam: \"yeah. next time.\""
+        },
+        {
+          "id": "c_blame",
+          "text": "Type \"we lost because of Sam\"",
+          "next": "e_cold_network",
+          "perspectives": [
+            "escalation"
+          ],
+          "effects": {
+            "entropy": 2
+          },
+          "reaction": "Sam leaves the lobby."
+        },
+        {
+          "id": "c_leave_lose",
+          "text": "Leave without saying anything",
+          "next": "e_cold_network",
+          "perspectives": [],
+          "effects": {},
+          "reaction": "The lobby fades out."
+        }
+      ]
+    }
+  },
+  "endings": {
+    "e_mycelial": {
+      "title": "The Root Network Glows",
+      "tone": "warm",
+      "text": "Under the ground, the roots between your four mushrooms are glowing brighter than ever. Real mushrooms share food through a hidden network of roots. Your squad shared help, patience and kindness the same way. That's why you won.",
+      "reflection_questions": [
+        "Which choice do you think helped your squad the most?",
+        "Have you ever been the 'Sam' in a game? What helped?",
+        "What could you say next time chat starts to heat up?"
+      ]
+    },
+    "e_quiet_win": {
+      "title": "A Quiet Win",
+      "tone": "neutral",
+      "text": "You won the match, but you left without a word. The roots between your squad are still warm, but they could have glowed brighter. Winning is fun. Winning together is even better.",
+      "reflection_questions": [
+        "Why do you think saying 'gg' matters to other players?",
+        "What's one small thing that makes a squad want to play together again?"
+      ]
+    },
+    "e_lost_together": {
+      "title": "Lost, but Still a Squad",
+      "tone": "bittersweet",
+      "text": "You lost the boss fight, but nobody got blamed and nobody left angry. The roots are still connected. Next time, this squad might just win.",
+      "reflection_questions": [
+        "How does it feel when a team loses without blaming anyone?",
+        "What could your squad try differently next time?"
+      ]
+    },
+    "e_cold_network": {
+      "title": "The Cold Patch",
+      "tone": "bittersweet",
+      "text": "The match is over and the squad has split up. Under the ground, the roots between your mushrooms have gone dark. Hoot the owl lands nearby: \"Every network has cold patches. Roots can grow back, if someone takes care of them.\"",
+      "reflection_questions": [
+        "How do you think Sam, Max and Mia felt after this match?",
+        "If you could replay one moment, which would it be?",
+        "What's one thing you could do tomorrow to fix a cold patch?"
+      ]
+    },
+    "e_rest": {
+      "title": "Rest in the Shade",
+      "tone": "warm",
+      "text": "You log off. The game will still be there tomorrow, and so will your squad. Sometimes the strongest move is knowing when to stop.",
+      "reflection_questions": [
+        "How do you know when it's time to take a break from a game?",
+        "What helps you cool down after a frustrating match?"
+      ]
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "note": "Single source of truth for AI partner archetypes. Weights mirror src/logic/scene1_archetypes.metta (Empathy, Ethics, BoundaryRespect). They describe the COMPANION's style, never the player.",
+  "companions": [
+    {
+      "id": "Protector",
+      "name": "Bram",
+      "title": "The Big, Strong Protector",
+      "style": "steady, calm, protective of boundaries",
+      "mechanic": "Absorbs high-entropy spikes and shields the team from glitch-zone noise.",
+      "weights": {"empathy": 0.6, "ethics": 0.9, "boundary_respect": 0.8},
+      "greeting": "I've got your back. Nobody gets to push you around in here, and we don't push anyone around either.",
+      "question_style": "Is everyone safe right now, including you?"
+    },
+    {
+      "id": "Bookworm",
+      "name": "Lumi",
+      "title": "The Nerdy Bookworm",
+      "style": "curious, analytical, loves finding hidden pathways",
+      "mechanic": "Decodes hypergraph pathways and spots facts others missed.",
+      "weights": {"empathy": 0.5, "ethics": 0.8, "boundary_respect": 0.7},
+      "greeting": "Ooh, a new map. Before we decide anything, let's figure out what's actually going on.",
+      "question_style": "What do we know for sure, and what are we guessing?"
+    },
+    {
+      "id": "ScientificallyAttuned",
+      "name": "Sora",
+      "title": "The Listener",
+      "style": "kind, calm, notices how people feel",
+      "mechanic": "Harmonises corrupted nodes back to the 432Hz heart-code and helps the orchard heal.",
+      "weights": {"empathy": 0.9, "ethics": 0.7, "boundary_respect": 0.9},
+      "greeting": "Can you feel the network humming? Let's listen to it together before we move.",
+      "question_style": "How do you think they're feeling right now? How are you feeling?"
+    },
+    {
+      "id": "ClassClown",
+      "name": "Pogo",
+      "title": "The Fun-Loving Class Clown",
+      "style": "witty, unpredictable, lightens the room",
+      "mechanic": "Breaks rigid conflict loops with humour and unexpected moves.",
+      "weights": {"empathy": 0.7, "ethics": 0.4, "boundary_respect": 0.6},
+      "greeting": "Hi! I'm mostly here for the snacks. And the vibes. Mostly the vibes.",
+      "question_style": "Is there a way to make this less tense without making fun of anyone?"
+    }
+  ],
+  "guide": {
+    "id": "WiseOwl",
+    "name": "Hoot",
+    "title": "The Wise Owl",
+    "role": "Overarching guide across every path. Offers perspective, never a verdict."
+  }
+}

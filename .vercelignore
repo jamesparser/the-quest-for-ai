@@ -1,0 +1,6 @@
+*.pdf
+poetry.lock
+.env
+.venv
+tests/
+__pycache__/

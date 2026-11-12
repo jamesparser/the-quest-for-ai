@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tqfai"
+version = "0.1.0"
+description = "The Quest for AI / The Agency of Mushrooms: cooperative narrative engine for pre-teen social-gaming resilience"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+dependencies = []  # Core engine is stdlib-only on purpose: easy to run for every team member.
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+metta = ["hyperon"]  # Optional symbolic-reasoning layer (Workstream 4). Engine works without it.
+
+[project.scripts]
+tqfai = "tqfai.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["tqfai*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

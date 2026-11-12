@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Quest for AI</title>
+<!--
+  The game page. Works two ways:
+  1. Local:  python -m tqfai serve   then open http://127.0.0.1:8787
+  2. Online: the Vercel site serves this page and /api on the same address.
+  The page never sees the AI key. It only talks to our own /api.
+
+  Background mushrooms are drawn here in SVG (our own art, free to use).
+  They smile and glow when the team gets along, and look worried when chat gets tense.
+-->
+<style>
+  :root {
+    --sky1:#2a1f5c; --sky2:#3b2a7a; --sky3:#6a4bb0;
+    --panel:rgba(24,18,56,.82); --ink:#fff7ee; --muted:#d6cdf5; --glow:#7ef9d4; --heat:#ff8fa3;
+    --gpx:4px; --smile:1; --worry:0;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; font:17px/1.55 "Nunito", system-ui, sans-serif; color:var(--ink);
+         background:linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%); background-attachment:fixed; }
+  main { position:relative; z-index:1; max-width:720px; margin:0 auto; padding:24px 16px 160px; }
+  h1 { font-size:1.6rem; color:var(--glow); margin:0 0 2px; text-shadow:0 0 12px rgba(126,249,212,.5); }
+  h2 { margin:.2em 0 .4em; }
+  .panel { background:var(--panel); border-radius:18px; padding:18px; margin:12px 0;
+           box-shadow:0 8px 30px rgba(0,0,0,.25); backdrop-filter:blur(3px); }
+  .muted { color:var(--muted); font-size:.92rem; }
+  .story { white-space:pre-line; }
+  /* ---------- the 8-bit TV ---------- */
+  .tv { margin:14px 0 6px; padding:12px 12px 10px; border-radius:22px; background:linear-gradient(180deg,#4a3a2a,#2e2318);
+        box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.12); }
+  .tv canvas { display:block; width:100%; aspect-ratio:16/9; image-rendering:pixelated; border-radius:12px;
+               background:#000; cursor:pointer; touch-action:none; box-shadow:inset 0 0 20px rgba(0,0,0,.8); }
+  .tv .knobs { display:flex; justify-content:space-between; align-items:center; margin-top:8px; color:#c9b89a; font-size:.75rem; }
+  .tv .knobs i { display:inline-block; width:12px; height:12px; border-radius:50%; background:#1a130c; margin-left:6px; box-shadow:inset 0 1px 2px rgba(255,255,255,.2); }
+  button.near { border-color:var(--glow); background:#3a2f8a; box-shadow:0 0 0 2px rgba(126,249,212,.35); }
+  .companion { border-left:4px solid var(--glow); padding:6px 0 6px 12px; font-style:italic; background:rgba(126,249,212,.06); border-radius:0 10px 10px 0; }
+  button { display:block; width:100%; text-align:left; margin:10px 0; padding:13px 14px; border-radius:14px;
+           border:2px solid #5b4aa8; background:#2d2370; color:var(--ink); font:inherit; cursor:pointer;
+           transition:transform .1s, border-color .2s; }
+  button:hover { border-color:var(--glow); transform:translateY(-1px); }
+  button:disabled { opacity:.5; cursor:wait; transform:none; }
+  .meters { display:flex; gap:16px; font-size:.85rem; color:var(--muted); }
+  .bar { height:8px; border-radius:4px; background:rgba(255,255,255,.12); margin-top:4px; overflow:hidden; }
+  .bar > i { display:block; height:100%; transition:width .5s; }
+
+  /* ---------- background mushrooms ---------- */
+  #shrooms { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  #shrooms svg.m { position:absolute; filter:drop-shadow(0 0 var(--gpx) rgba(126,249,212,.75));
+                   transition:filter .8s; animation:bob 4s ease-in-out infinite; transform-origin:50% 100%; }
+  body.tense #shrooms svg.m { animation:shiver .35s linear infinite; filter:drop-shadow(0 0 3px rgba(255,143,163,.6)); }
+  @keyframes bob { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }
+  @keyframes shiver { 0%,100% { transform:rotate(-1.5deg) } 50% { transform:rotate(1.5deg) } }
+  @media (prefers-reduced-motion: reduce) { #shrooms svg.m { animation:none !important; } }
+  .star { position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:.6; }
+</style>
+</head>
+<body>
+
+<!-- One reusable cute mushroom. The cap colour comes from CSS `color`. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="shroom" viewBox="0 0 100 110">
+    <path d="M30 56 L70 56 Q78 104 66 105 L34 105 Q22 104 30 56Z" fill="#fff4e3" stroke="#3a2546" stroke-width="3"/>
+    <path d="M6 54 Q6 6 50 6 Q94 6 94 54 Q94 62 85 62 L15 62 Q6 62 6 54Z" fill="currentColor" stroke="#3a2546" stroke-width="3"/>
+    <path d="M14 30 Q26 14 44 11" fill="none" stroke="#fff" stroke-opacity=".45" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="30" cy="32" r="7" fill="#fff" fill-opacity=".92"/>
+    <circle cx="58" cy="20" r="5" fill="#fff" fill-opacity=".92"/>
+    <circle cx="74" cy="40" r="8" fill="#fff" fill-opacity=".92"/>
+    <circle cx="48" cy="46" r="4" fill="#fff" fill-opacity=".92"/>
+    <ellipse cx="41" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/>
+    <ellipse cx="59" cy="77" rx="4.5" ry="5.5" fill="#2a1b33"/>
+    <circle cx="42.6" cy="75" r="1.6" fill="#fff"/>
+    <circle cx="60.6" cy="75" r="1.6" fill="#fff"/>
+    <ellipse cx="34" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/>
+    <ellipse cx="66" cy="86" rx="5" ry="3" fill="#ff8fb1" fill-opacity=".6"/>
+    <path d="M45 85 Q50 90 55 85" fill="none" stroke="#2a1b33" stroke-width="2.5" stroke-linecap="round" style="opacity:var(--smile,1)"/>
+    <path d="M45 89 Q50 84 55 89" fill="none" stroke="#2a1b33" stroke-width="2.5" stroke-linecap="round" style="opacity:var(--worry,0)"/>
+  </symbol>
+</svg>
+<div id="shrooms" aria-hidden="true"></div>
+
+<main>
+  <h1>The Quest for AI 🍄🦉</h1>
+  <div class="muted">A story game you play with an AI helper</div>
+  <div class="tv">
+    <canvas id="tv" aria-label="Game screen. Walk to a numbered sign and press Space, or use the buttons below."></canvas>
+    <div class="knobs"><span>Arrows / WASD to walk · SPACE to choose · or tap the screen</span><span><i></i><i></i></span></div>
+  </div>
+  <div id="app" class="panel">Loading…</div>
+</main>
+<script src="tv.js"></script>
+<script>
+// Same address as the page when online or local; localhost if opened as a file.
+const API = (new URLSearchParams(location.search).get("api") || (location.protocol === "file:" ? "http://127.0.0.1:8787" : "")) + "/api";
+const app = document.getElementById("app");
+let save = null;   // the game save lives here, in the browser only
+
+// ---- background: stars + mushrooms (left %, bottom px, size px, colour, animation delay s)
+(function drawBackground() {
+  const box = document.getElementById("shrooms");
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("i");
+    s.className = "star";
+    s.style.left = Math.random() * 100 + "%";
+    s.style.top = Math.random() * 60 + "%";
+    s.style.opacity = (0.2 + Math.random() * 0.6).toFixed(2);
+    box.append(s);
+  }
+  const spots = [
+    [-3, -10, 150, "#ff7aa8", 0], [9, -14, 90, "#7cc8ff", 1.2], [17, -8, 60, "#ffb35c", .5],
+    [80, -12, 160, "#b48cff", .8], [71, -10, 85, "#ff6f7d", 1.7], [92, 110, 70, "#7ef9d4", 2.1],
+    [-2, 230, 80, "#ffd166", 1.4], [45, -22, 70, "#ff9fd0", 2.4], [60, -12, 55, "#8be0ff", .3],
+  ];
+  for (const [left, bottom, size, color, delay] of spots) {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "m");
+    svg.setAttribute("viewBox", "0 0 100 110");
+    Object.assign(svg.style, { left: left + "%", bottom: bottom + "px", width: size + "px", color, animationDelay: delay + "s" });
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#shroom");
+    svg.append(use);
+    box.append(svg);
+  }
+})();
+
+// Mushrooms react to the story: glow with team connection, worry when tension is high.
+function setMood(state) {
+  const tense = state.entropy >= 4;
+  document.body.classList.toggle("tense", tense);
+  document.body.style.setProperty("--smile", tense ? 0 : 1);
+  document.body.style.setProperty("--worry", tense ? 1 : 0);
+  document.body.style.setProperty("--gpx", (3 + state.connection * 3) + "px");
+}
+
+const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+async function call(method, path, body) {
+  const r = await fetch(API + path, { method, headers: { "Content-Type": "application/json" }, body: body && JSON.stringify(body) });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || "Something went wrong");
+  return j;
+}
+function meter(label, value, color) {
+  return el("div", { style: "flex:1" }, `${label} ${value}/10`,
+    el("div", { className: "bar" }, el("i", { style: `width:${value * 10}%;background:${color}` })));
+}
+
+async function pickCompanion() {
+  setMood({ entropy: 0, connection: 1 });
+  const [{ companions }, { scenarios }] = await Promise.all([call("GET", "/companions"), call("GET", "/scenarios")]);
+  const sc = scenarios[0];
+  const buttons = companions.map(c => el("button", { onclick: () => start(sc.id, c.id) }, `${c.name} — ${c.title}`));
+  app.replaceChildren(el("h2", {}, sc.title), el("p", {}, sc.summary), el("p", { className: "muted" }, "Choose your AI helper:"), ...buttons);
+  TV.show({ sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [],
+            options: companions.map((c, i) => ({ label: `${c.name}, ${c.title}`, button: buttons[i], pick: () => start(sc.id, c.id) })) });
+}
+async function start(scenarioId, companionId) { render(await call("POST", "/start", { scenario_id: scenarioId, companion_id: companionId })); }
+async function choose(id) {
+  app.querySelectorAll("button").forEach(b => b.disabled = true);   // AI may take a few seconds
+  TV.setBusy(true);
+  try { render(await call("POST", "/choose", { save, choice_id: id })); }
+  catch (e) { app.prepend(el("p", { className: "muted" }, e.message)); app.querySelectorAll("button").forEach(b => b.disabled = false); }
+  finally { TV.setBusy(false); }
+}
+
+function render(v) {
+  save = v.save;
+  setMood(v.state);
+  const kids = [el("div", { className: "meters" },
+    meter("Tension", v.state.entropy, "var(--heat)"), meter("Team glow", v.state.connection, "var(--glow)"))];
+  if (v.last) {
+    if (v.last.reaction) kids.push(el("p", { className: "muted" }, v.last.reaction));
+    kids.push(el("p", { className: "companion" }, `${v.companion.name}: “${v.last.companion_note}”`));
+  }
+  if (v.finished) {
+    const e = v.ending;
+    kids.push(el("h2", {}, e.title), el("p", {}, e.text), el("p", { className: "muted" }, "Things to think about:"),
+      el("ul", {}, ...e.reflection_questions.map(q => el("li", {}, q))),
+      el("button", { onclick: pickCompanion }, "Play again"));
+  } else {
+    const s = v.scene;
+    kids.push(el("p", { className: "story" }, s.text));
+    if (s.companion_line) kids.push(el("p", { className: "companion" }, `${v.companion.name}: “${s.companion_line}”`));
+    const buttons = s.choices.map((c, i) => el("button", { onclick: () => choose(c.id) }, `${i + 1}. ${c.text}`));
+    kids.push(...buttons);
+    TV.show({ sceneId: s.id, state: v.state, last: v.last, history: v.save.history,
+              options: s.choices.map((c, i) => ({ label: c.text, button: buttons[i], pick: () => choose(c.id) })) });
+  }
+  if (v.finished) TV.show({ sceneId: "ending", state: v.state, last: v.last, history: v.save.history, ending: v.ending, options: [] });
+  app.replaceChildren(...kids);
+}
+pickCompanion().catch(e => app.textContent = `${e.message}. Is the game server running? (python -m tqfai serve)`);
+</script>
+</body>
+</html>

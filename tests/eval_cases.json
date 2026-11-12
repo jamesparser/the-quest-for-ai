@@ -1,0 +1,10 @@
+{
+  "note": "Fixed evaluation set for the MeTTa decision gate (ROADMAP milestone 3). Workstream 4 extends this; keep cases small, explicit and reviewed.",
+  "cases": [
+    {"scenario_id": "s01_the_lagging_teammate", "scene_id": "intro", "choice_id": "c_ask_sam", "companion_id": "Bookworm", "expect_perspectives": ["curiosity", "empathy"], "expect_uncertain": false},
+    {"scenario_id": "s01_the_lagging_teammate", "scene_id": "intro", "choice_id": "c_pile_on", "companion_id": "Protector", "expect_perspectives": ["escalation"], "expect_uncertain": false},
+    {"scenario_id": "s01_the_lagging_teammate", "scene_id": "s_sam_reply", "choice_id": "c_keep_quiet", "companion_id": "ClassClown", "expect_perspectives": [], "expect_uncertain": true},
+    {"scenario_id": "s01_the_lagging_teammate", "scene_id": "s_shade", "choice_id": "c_log_off", "companion_id": "ScientificallyAttuned", "expect_perspectives": ["self_care"], "expect_uncertain": false},
+    {"scenario_id": "s01_the_lagging_teammate", "scene_id": "s_max_pushback", "choice_id": "c_hear_max", "companion_id": "ScientificallyAttuned", "expect_perspectives": ["empathy", "repair"], "expect_uncertain": false}
+  ]
+}
