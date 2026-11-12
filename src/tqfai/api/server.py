@@ -32,8 +32,9 @@ from ..session import Session
 
 WEB_DIR = REPO_ROOT / "web"
 WEB_PAGE = WEB_DIR / "index.html"
-STATIC_FILE = re.compile(r"^/((?:fonts/)?[a-z0-9_-]+\.(?:js|woff2))$")
-STATIC_TYPES = {".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2"}
+STATIC_FILE = re.compile(r"^/((?:fonts/)?[a-z0-9_-]+\.(?:js|woff2|svg|png|ico))$")
+STATIC_TYPES = {".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2", ".svg": "image/svg+xml",
+                ".png": "image/png", ".ico": "image/x-icon"}
 MAX_BODY = 64_000
 
 
