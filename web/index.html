@@ -5,85 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Quest for AI</title>
 <!--
-  The game page. Everything happens inside one big TV:
-    - top of the screen: power bars (Tension, Team glow) and which part of the story you're in
-    - middle: the 8-bit world (web/tv.js). Walk to a numbered sign and press SPACE, or click it
-    - bottom: the dialog box. Story text comes page by page (SPACE / click to continue), then the choices
+  The game page. EVERYTHING the player sees is drawn inside the TV screen by web/tv.js
+  (power bars, pixel world, story dialog box, choices). This file only holds the TV case,
+  the cute mushrooms around it, and the game flow (talking to /api).
   Works locally (python -m tqfai serve) and online (Vercel). The page never sees the AI key.
 -->
 <style>
-  :root {
-    --sky1:#2a1f5c; --sky2:#3b2a7a; --sky3:#6a4bb0;
-    --ink:#fff7ee; --muted:#d6cdf5; --glow:#7ef9d4; --heat:#ff8fa3; --gold:#ffd23f;
-    --gpx:4px; --smile:1; --worry:0;
-  }
+  /* pixel fonts live in web/fonts (free, SIL Open Font License) */
+  @font-face { font-family:"VT323"; src:url("fonts/vt323.woff2") format("woff2"); font-display:swap; }
+  @font-face { font-family:"Press Start 2P"; src:url("fonts/press-start-2p.woff2") format("woff2"); font-display:swap; }
+  :root { --sky1:#2a1f5c; --sky2:#3b2a7a; --sky3:#6a4bb0; --gpx:4px; --smile:1; --worry:0; }
   * { box-sizing:border-box; }
   html, body { height:100%; }
-  body { margin:0; font:17px/1.5 "Nunito", "Trebuchet MS", system-ui, sans-serif; color:var(--ink);
-         background:linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%); background-attachment:fixed;
-         display:flex; align-items:center; justify-content:center; padding:12px; }
+  body { margin:0; background:linear-gradient(180deg, var(--sky1) 0%, var(--sky2) 55%, var(--sky3) 100%);
+         background-attachment:fixed; display:flex; align-items:center; justify-content:center; padding:10px; }
 
-  /* ---------- the TV ---------- */
-  .tv { position:relative; z-index:1; width:min(1200px, 100%, calc((100vh - 330px) * 1.78)); min-width:min(100%, 340px);
-        padding:16px 16px 12px; border-radius:28px; background:linear-gradient(180deg,#5a4632,#2e2318);
+  /* the TV case: no text on it, just plastic, a speaker and knobs */
+  .tv { position:relative; z-index:1; width:min(980px, 100%, calc(100vh - 70px)); min-width:min(100%, 320px);
+        padding:16px 16px 14px; border-radius:26px; background:linear-gradient(180deg,#5a4632,#2e2318);
         box-shadow:0 18px 50px rgba(0,0,0,.5), inset 0 2px 0 rgba(255,255,255,.15); }
-  .screen { position:relative; border-radius:18px; overflow:hidden; background:#0d0a24;
-            box-shadow:inset 0 0 30px rgba(0,0,0,.9), 0 0 0 3px #1a130c; }
-  .screen::after { content:""; position:absolute; inset:0; pointer-events:none; border-radius:18px;
-                   background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.35) 100%); }
-  canvas#tv { display:block; width:100%; aspect-ratio:16/9; image-rendering:pixelated; cursor:pointer; touch-action:none; }
+  .screen { position:relative; border-radius:16px; overflow:hidden; background:#000; box-shadow:0 0 0 4px #120d08, inset 0 0 30px #000; }
+  .screen::after { content:""; position:absolute; inset:0; pointer-events:none;
+                   background:radial-gradient(ellipse at center, transparent 62%, rgba(0,0,0,.35) 100%); }
+  canvas#tv { display:block; width:100%; aspect-ratio:1/1; image-rendering:pixelated; touch-action:none; }
+  .case { display:flex; justify-content:space-between; align-items:center; margin-top:10px; height:18px; }
+  .grill { width:90px; height:12px; background:repeating-linear-gradient(90deg,#1a130c 0 4px,transparent 4px 8px); border-radius:3px; }
+  .knobs i { display:inline-block; width:16px; height:16px; border-radius:50%; background:#1a130c; margin-left:8px; box-shadow:inset 0 2px 3px rgba(255,255,255,.2); }
+  .sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 
-  /* power bars + part title, on top of the picture */
-  .hud { position:absolute; top:0; left:0; right:0; display:flex; gap:14px; align-items:center; padding:10px 14px;
-         background:linear-gradient(180deg, rgba(8,6,24,.85), rgba(8,6,24,0)); font-weight:800; font-size:clamp(12px,1.4vw,16px);
-         text-shadow:0 2px 0 #000; pointer-events:none; }
-  .hud .part { flex:1.4; color:var(--gold); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .hud .meter { flex:1; min-width:90px; }
-  .hud .bar { height:10px; margin-top:3px; background:rgba(255,255,255,.15); border:2px solid #000; }
-  .hud .bar i { display:block; height:100%; transition:width .6s; }
-
-  /* dialog box under the picture, still inside the glass */
-  .dialog { position:relative; margin:0; padding:10px 14px 10px; min-height:150px;
-            background:#141036; border-top:4px solid #000; font-size:clamp(15px,1.55vw,19px); cursor:pointer; }
-  .dialog .box { border:3px solid #fff; border-radius:8px; padding:10px 14px 8px; min-height:126px; background:#1b1650; box-shadow:0 0 0 3px #000 inset; min-height:inherit; }
-  .who { display:inline-block; font-weight:800; color:#000; background:var(--gold); padding:0 8px; border-radius:4px; margin-bottom:6px; font-size:.85em; }
-  .who.helper { background:var(--glow); }
-  .who.narrator { background:#cdbbff; }
-  .say { white-space:pre-line; min-height:3.2em; }
-  .say.helper { font-style:italic; }
-  .more { position:absolute; right:30px; bottom:18px; color:var(--glow); font-size:.8em; animation:blink 1s steps(2) infinite; }
-  @keyframes blink { 50% { opacity:0 } }
-  .choices { list-style:none; margin:6px 0 0; padding:0; display:grid; gap:6px; grid-template-columns:1fr; }
-  @media (min-width:700px) { .choices { grid-template-columns:1fr 1fr; } }
-  .choices button { display:flex; gap:10px; width:100%; text-align:left; padding:9px 12px; border-radius:8px; cursor:pointer;
-                    border:2px solid #4a3fa0; background:#241d66; color:var(--ink); font:inherit; font-size:.95em; }
-  .choices button b { color:var(--gold); min-width:1.2em; }
-  .choices button:hover, .choices button.near { border-color:var(--glow); background:#2f2788; box-shadow:0 0 0 2px rgba(126,249,212,.35); }
-  .choices button:disabled { opacity:.5; cursor:wait; }
-  .choices small { display:block; color:var(--muted); font-size:.85em; }
-  .reflect { margin:4px 0 0 1.2em; padding:0; }
-  @media (max-width:600px) {
-    .hud { padding:5px 8px; gap:8px; font-size:11px; }
-    .hud .part { display:none; }
-    .hud .bar { height:6px; border-width:1px; }
-    .bezel > span:nth-child(2) { display:none; }
-    body { align-items:flex-start; }
-  }
-
-  /* bezel: brand + controls help */
-  .bezel { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; color:#f3e6cf; font-size:clamp(12px,1.2vw,15px); font-weight:700; }
-  .bezel .brand { color:var(--glow); letter-spacing:.06em; text-shadow:0 0 10px rgba(126,249,212,.4); }
-  .bezel .knobs i { display:inline-block; width:16px; height:16px; border-radius:50%; background:#1a130c; margin-left:8px; box-shadow:inset 0 2px 3px rgba(255,255,255,.2); }
-
-  /* ---------- cute mushrooms around the TV (our own SVG art) ---------- */
+  /* cute mushrooms around the TV (our own SVG art) */
   #shrooms { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
   #shrooms svg.m { position:absolute; filter:drop-shadow(0 0 var(--gpx) rgba(126,249,212,.75)); transition:filter .8s;
                    animation:bob 4s ease-in-out infinite; transform-origin:50% 100%; }
   body.tense #shrooms svg.m { animation:shiver .35s linear infinite; filter:drop-shadow(0 0 3px rgba(255,143,163,.6)); }
   @keyframes bob { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-6px) } }
   @keyframes shiver { 0%,100% { transform:rotate(-1.5deg) } 50% { transform:rotate(1.5deg) } }
-  @media (prefers-reduced-motion: reduce) { #shrooms svg.m, .more { animation:none !important; } }
+  @media (prefers-reduced-motion: reduce) { #shrooms svg.m { animation:none !important; } }
   .star { position:absolute; width:3px; height:3px; border-radius:50%; background:#fff; opacity:.6; }
+  @media (max-width:600px) { body { align-items:flex-start; } }
 </style>
 </head>
 <body>
@@ -106,28 +65,18 @@
 
 <div class="tv">
   <div class="screen">
-    <canvas id="tv" aria-label="Game screen. Walk to a numbered sign and press Space, or use the choices in the box below."></canvas>
-    <div class="hud" id="hud">
-      <div class="part" id="part">The Quest for AI</div>
-      <div class="meter">😬 Tension <span id="tval">0</span>/10<div class="bar"><i id="tbar" style="width:0;background:var(--heat)"></i></div></div>
-      <div class="meter">✨ Team glow <span id="gval">0</span>/10<div class="bar"><i id="gbar" style="width:0;background:var(--glow)"></i></div></div>
-    </div>
-    <div class="dialog" id="dialog" aria-live="polite"><div class="box" id="box">Loading…</div></div>
+    <canvas id="tv" tabindex="0" aria-label="The Quest for AI game screen. Space for next, 1 to 4 to choose."></canvas>
   </div>
-  <div class="bezel">
-    <span class="brand">THE QUEST FOR AI 🍄🦉</span>
-    <span>Move: arrows / W A S D · Next &amp; choose: SPACE · Or click</span>
-    <span class="knobs"><i></i><i></i></span>
-  </div>
+  <div class="case"><span class="grill"></span><span class="knobs"><i></i><i></i></span></div>
+  <div id="tv-live" class="sr" aria-live="polite"></div>
 </div>
 
 <script src="tv.js"></script>
 <script>
 // Same address as the page when online or local; localhost if opened as a file.
 const API = (new URLSearchParams(location.search).get("api") || (location.protocol === "file:" ? "http://127.0.0.1:8787" : "")) + "/api";
-const box = document.getElementById("box");
-let save = null;          // the game save lives here, in the browser only
-let pages = [], stage = "pages", onChoices = null, typing = null;
+let save = null;   // the game save lives here, in the browser only
+let helperName = "Helper";
 
 // ---- cute mushrooms around the TV ----
 (function drawBackground() {
@@ -148,7 +97,14 @@ let pages = [], stage = "pages", onChoices = null, typing = null;
   }
 })();
 
-const el = (tag, props = {}, ...kids) => { const n = Object.assign(document.createElement(tag), props); n.append(...kids); return n; };
+function setMood(state) {
+  const tense = (state.entropy ?? 0) >= 4;
+  document.body.classList.toggle("tense", tense);
+  document.body.style.setProperty("--smile", tense ? 0 : 1);
+  document.body.style.setProperty("--worry", tense ? 1 : 0);
+  document.body.style.setProperty("--gpx", (3 + (state.connection ?? 0) * 3) + "px");
+}
+
 async function call(method, path, body) {
   const r = await fetch(API + path, { method, headers: { "Content-Type": "application/json" }, body: body && JSON.stringify(body) });
   const j = await r.json();
@@ -156,22 +112,8 @@ async function call(method, path, body) {
   return j;
 }
 
-// ---- power bars + mood ----
-function setHud(state, part) {
-  if (part !== undefined) document.getElementById("part").textContent = part;
-  const e = state.entropy ?? 0, c = state.connection ?? 0;
-  document.getElementById("tval").textContent = e; document.getElementById("tbar").style.width = e * 10 + "%";
-  document.getElementById("gval").textContent = c; document.getElementById("gbar").style.width = c * 10 + "%";
-  const tense = e >= 4;
-  document.body.classList.toggle("tense", tense);
-  document.body.style.setProperty("--smile", tense ? 0 : 1);
-  document.body.style.setProperty("--worry", tense ? 1 : 0);
-  document.body.style.setProperty("--gpx", (3 + c * 3) + "px");
-}
-
-// ---- dialog box: pages, then choices ----
-// Split long story text into short pages that fit the box.
-function paginate(text, max = 230) {
+// Split long story text into short pages that fit the dialog box.
+function paginate(text, max = 200) {
   const out = [];
   for (const para of text.split(/\n\s*\n/)) {
     let cur = "";
@@ -183,115 +125,69 @@ function paginate(text, max = 230) {
   }
   return out;
 }
-
-function speakerOf(text) {
-  const m = text.match(/^(Sam|Max|Mia|GlowKing_99|Hoot)\b/);
-  return m ? m[1] : null;
-}
-
-function story(pagesIn, then) {
-  pages = pagesIn.filter(p => p && p.text);
-  onChoices = then;
-  stage = "pages";
-  TV.show({ ...TV_STATE, options: [] });
-  nextPage();
-}
-
-function nextPage() {
-  if (!pages.length) { stage = "choices"; TV.setPrompt(null); onChoices(); return; }
-  const p = pages.shift();
-  const label = el("div", { className: "who " + (p.kind || "") }, p.who || "Story");
-  const say = el("div", { className: "say " + (p.kind || "") });
-  box.replaceChildren(label, say, el("div", { className: "more" }, "▼ SPACE"));
-  TV.setPrompt("Press SPACE (or click the box) to continue");
-  typeOut(say, p.text);
-}
-
-function typeOut(node, text) {
-  clearInterval(typing?.id);
-  let i = 0;
-  typing = { node, text, id: setInterval(() => {
-    i += 2; node.textContent = text.slice(0, i);
-    if (i >= text.length) { clearInterval(typing.id); typing = null; }
-  }, 16) };
-}
-
-function advance() {
-  if (stage !== "pages") return false;
-  if (typing) { clearInterval(typing.id); typing.node.textContent = typing.text; typing = null; return true; }
-  nextPage(); return true;
-}
-TV.onAction = advance;
-document.getElementById("dialog").addEventListener("click", e => { if (!e.target.closest("button")) advance(); });
-
-function showChoices(title, items, extra) {
-  const buttons = items.map((it, i) => el("button", { onclick: it.pick }, el("b", {}, `${i + 1}`),
-    el("span", {}, it.label, it.sub ? el("small", {}, it.sub) : "")));
-  box.replaceChildren(el("div", { className: "who" }, title), ...(extra ? [extra] : []), el("div", { className: "choices" }, ...buttons));
-  TV.show({ ...TV_STATE, options: items.map((it, i) => ({ label: it.label, button: buttons[i], pick: it.pick })) });
-}
+const speakerOf = text => (text.match(/^(Sam|Max|Mia|GlowKing_99|Hoot)\b/) || [])[1] || null;
 
 // ---- game flow ----
-let TV_STATE = { sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [] };
-
 async function menu() {
   save = null;
-  TV_STATE = { sceneId: "menu", state: { entropy: 0, connection: 3 }, history: [] };
-  setHud(TV_STATE.state, "The Quest for AI");
+  const state = { entropy: 0, connection: 3 };
+  setMood(state);
   const [{ companions }, { scenarios }] = await Promise.all([call("GET", "/companions"), call("GET", "/scenarios")]);
   const sc = scenarios[0];
-  story([
-    { who: sc.title, kind: "narrator", text: sc.summary },
-    { who: "How to play", kind: "narrator", text: "Walk your orange mushroom to a numbered sign and press SPACE. Or click a sign, or press 1, 2, 3, 4. Kind choices make the roots under the ground glow." },
-  ], () => showChoices("Pick your AI helper", companions.map(c => ({
-    label: `${c.name}: ${c.title}`, sub: c.style, pick: () => start(sc.id, c.id) }))));
+  TV.play({
+    world: { sceneId: "menu", state, history: [] },
+    part: "The Quest for AI",
+    pages: [
+      { who: sc.title, kind: "narrator", text: sc.summary },
+      { who: "How to play", kind: "narrator", text: "Walk your orange mushroom (YOU) to a numbered sign and press SPACE. Or press 1, 2, 3, 4. Or click. Kind choices make the roots under the ground glow." },
+    ],
+    choicesTitle: "Pick your AI helper",
+    choices: companions.map(c => ({ label: `${c.name}: ${c.title}`, sub: c.style, pick: () => start(sc.id, c) })),
+  });
 }
 
-async function start(scenarioId, companionId) { render(await call("POST", "/start", { scenario_id: scenarioId, companion_id: companionId })); }
+async function start(scenarioId, companion) {
+  helperName = companion.name;
+  TV.setBusy(helperName);
+  try { render(await call("POST", "/start", { scenario_id: scenarioId, companion_id: companion.id })); }
+  catch (e) { TV.error(e.message); }
+}
 
 async function choose(id) {
-  if (stage !== "choices") return;
-  stage = "busy";
-  box.querySelectorAll("button").forEach(b => b.disabled = true);
-  TV.setBusy(true);
+  TV.setBusy(helperName);
   try { render(await call("POST", "/choose", { save, choice_id: id })); }
-  catch (e) {
-    stage = "choices"; box.querySelectorAll("button").forEach(b => b.disabled = false);
-    box.prepend(el("div", { className: "who" }, e.message));
-  }
-  finally { TV.setBusy(false); }
+  catch (e) { TV.error(e.message); }
 }
 
 function render(v) {
   save = v.save;
-  const sceneId = v.finished ? "ending" : v.scene.id;
-  TV_STATE = { sceneId, state: v.state, last: v.last, history: v.save.history, ending: v.ending };
-  const helper = v.companion.name;
-  const out = [];
+  setMood(v.state);
+  const world = { sceneId: v.finished ? "ending" : v.scene.id, state: v.state, history: v.save.history, ending: v.ending };
+  const pages = [];
   if (v.last) {
-    if (v.last.reaction) out.push({ who: speakerOf(v.last.reaction) || "What happens", kind: speakerOf(v.last.reaction) ? "" : "narrator", text: v.last.reaction });
-    out.push({ who: helper, kind: "helper", text: v.last.companion_note });
+    const who = speakerOf(v.last.reaction || "");
+    if (v.last.reaction) pages.push({ who: who || "What happens", kind: who ? "" : "narrator", text: v.last.reaction });
+    pages.push({ who: v.companion.name, kind: "helper", text: v.last.companion_note });
   }
   if (v.finished) {
     const e = v.ending;
-    setHud(v.state, "The End: " + e.title);
-    out.push(...paginate(e.text).map(t => ({ who: e.title, kind: "narrator", text: t })));
-    story(out, () => showChoices("Things to think about", [{ label: "Play again", pick: menu }],
-      el("ul", { className: "reflect" }, ...e.reflection_questions.map(q => el("li", {}, q)))));
+    pages.push(...paginate(e.text).map(t => ({ who: e.title, kind: "narrator", text: t })));
+    TV.play({ world, part: "The End", pages, choicesTitle: "Things to think about",
+              notes: e.reflection_questions, choices: [{ label: "Play again", pick: menu }] });
     return;
   }
   const s = v.scene;
   let text = s.text, part;
-  const m = text.match(/^(Part \d+: [^.]+)\.\s*/);
-  if (m) { part = m[1]; text = text.slice(m[0].length); }
-  setHud(v.state, part);
+  const m = text.match(/^Part (\d+): ([^.]+)\.\s*/);
+  if (m) { part = `${m[1]}/5 ${m[2]}`; text = text.slice(m[0].length); }
   const who = s.speaker === "narrator" ? "Story" : s.speaker === "WiseOwl" ? "Hoot the owl" : s.speaker;
-  out.push(...paginate(text).map(t => ({ who, kind: s.speaker === "narrator" ? "narrator" : "", text: t })));
-  if (s.companion_line) out.push({ who: helper, kind: "helper", text: s.companion_line });
-  story(out, () => showChoices("What do you do?", s.choices.map(c => ({ label: c.text, pick: () => choose(c.id) }))));
+  pages.push(...paginate(text).map(t => ({ who, kind: s.speaker === "narrator" ? "narrator" : "", text: t })));
+  if (s.companion_line) pages.push({ who: v.companion.name, kind: "helper", text: s.companion_line });
+  TV.play({ world, part, pages, choicesTitle: "What do you do?",
+            choices: s.choices.map(c => ({ label: c.text, pick: () => choose(c.id) })) });
 }
 
-menu().catch(e => box.textContent = `${e.message}. Is the game server running? (python -m tqfai serve)`);
+menu().catch(e => TV.error(`${e.message}. Is the game server running?`));
 </script>
 </body>
 </html>

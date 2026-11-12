@@ -32,7 +32,8 @@ from ..session import Session
 
 WEB_DIR = REPO_ROOT / "web"
 WEB_PAGE = WEB_DIR / "index.html"
-STATIC_FILE = re.compile(r"^/([a-z0-9_-]+\.js)$")
+STATIC_FILE = re.compile(r"^/((?:fonts/)?[a-z0-9_-]+\.(?:js|woff2))$")
+STATIC_TYPES = {".js": "text/javascript; charset=utf-8", ".woff2": "font/woff2"}
 MAX_BODY = 64_000
 
 
@@ -128,7 +129,8 @@ def make_handler(service: GameService):
                 return self._send(200, WEB_PAGE.read_bytes(), "text/html; charset=utf-8")
             m = STATIC_FILE.match(route)
             if m and (WEB_DIR / m.group(1)).is_file():
-                return self._send(200, (WEB_DIR / m.group(1)).read_bytes(), "text/javascript; charset=utf-8")
+                f = WEB_DIR / m.group(1)
+                return self._send(200, f.read_bytes(), STATIC_TYPES[f.suffix])
             try:
                 return self._send(200, service.info(route.lstrip("/")))
             except KeyError:
