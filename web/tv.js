@@ -12,8 +12,12 @@
   const W = 256, H = 144, GROUND = 110;
   const canvas = document.getElementById("tv");
   const ctx = canvas.getContext("2d");
-  canvas.width = W; canvas.height = H;
+  // Draw at 3x so pixel art stays sharp and text is easy to read.
+  const S = 3;
+  canvas.width = W * S; canvas.height = H * S;
+  ctx.setTransform(S, 0, 0, S, 0, 0);
   ctx.imageSmoothingEnabled = false;
+  const FONT = 'bold 7px "Trebuchet MS", Verdana, sans-serif';
 
   // ---------- pixel art ----------
   const MUSH = [
@@ -284,19 +288,19 @@
     }
 
     // hint bar
-    ctx.fillStyle = "rgba(0,0,0,.55)"; ctx.fillRect(0, H - 9, W, 9);
+    ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(0, H - 11, W, 11);
     const hint = busy ? "..." : nearIndex >= 0
-      ? `SPACE: ${short(view.options[nearIndex].label)}`
-      : view.options?.length ? "ARROWS/WASD TO WALK TO A SIGN - OR CLICK IT" : "";
-    text(hint, 3, H - 2, nearIndex >= 0 ? "#7ef9d4" : "#d6cdf5");
+      ? `Press SPACE: ${short(view.options[nearIndex].label)}`
+      : view.options?.length ? "Walk to a sign: arrow keys or W A S D. Or click a sign." : "";
+    text(hint, 4, H - 3, nearIndex >= 0 ? "#7ef9d4" : "#ffffff");
 
     for (const c of confetti) { ctx.fillStyle = c.c; ctx.fillRect(Math.round(c.x), Math.round(c.y), 2, 2); }
     if (tense) { ctx.strokeStyle = "rgba(255,80,110,.6)"; ctx.lineWidth = 2; ctx.strokeRect(1, 1, W - 2, H - 2); }
     if (tvOff) { ctx.fillStyle = "rgba(0,0,0,.75)"; ctx.fillRect(0, 0, W, H); text("ZZZ...  SEE YOU TOMORROW", 70, 72, "#7ef9d4"); }
 
     // old-TV scanlines
-    ctx.fillStyle = "rgba(0,0,0,.12)";
-    for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, 1);
+    ctx.fillStyle = "rgba(0,0,0,.06)";
+    for (let y = 0; y < H; y += 2) ctx.fillRect(0, y, W, .5);
   }
 
   function drawRotKing(x, y, t) {
@@ -309,15 +313,15 @@
     text("ROT KING", x + 4, y - 7 + wob, "#ffdd33");
   }
 
-  function short(s) { return s.length > 46 ? s.slice(0, 45) + "…" : s; }
+  function short(s) { return s.length > 44 ? s.slice(0, 43) + "…" : s; }
 
   function text(s, x, y, color) {
-    ctx.font = "7px monospace"; ctx.fillStyle = "#000"; ctx.fillText(s, x + 1, y + 1);
+    ctx.font = FONT; ctx.fillStyle = "rgba(0,0,0,.85)"; ctx.fillText(s, x + .6, y + .6);
     ctx.fillStyle = color; ctx.fillText(s, x, y);
   }
 
   function drawBubble(s, x, y) {
-    ctx.font = "7px monospace";
+    ctx.font = FONT;
     const words = s.split(" "), lines = []; let line = "";
     for (const w of words) { if ((line + " " + w).trim().length > 26) { lines.push(line.trim()); line = w; } else line += " " + w; }
     if (line.trim()) lines.push(line.trim());

@@ -34,7 +34,7 @@
         box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.12); }
   .tv canvas { display:block; width:100%; aspect-ratio:16/9; image-rendering:pixelated; border-radius:12px;
                background:#000; cursor:pointer; touch-action:none; box-shadow:inset 0 0 20px rgba(0,0,0,.8); }
-  .tv .knobs { display:flex; justify-content:space-between; align-items:center; margin-top:8px; color:#c9b89a; font-size:.75rem; }
+  .tv .knobs { display:flex; justify-content:space-between; align-items:center; margin-top:8px; color:#f3e6cf; font-size:.95rem; font-weight:600; }
   .tv .knobs i { display:inline-block; width:12px; height:12px; border-radius:50%; background:#1a130c; margin-left:6px; box-shadow:inset 0 1px 2px rgba(255,255,255,.2); }
   button.near { border-color:var(--glow); background:#3a2f8a; box-shadow:0 0 0 2px rgba(126,249,212,.35); }
   .companion { border-left:4px solid var(--glow); padding:6px 0 6px 12px; font-style:italic; background:rgba(126,249,212,.06); border-radius:0 10px 10px 0; }
@@ -87,7 +87,7 @@
   <div class="muted">A story game you play with an AI helper</div>
   <div class="tv">
     <canvas id="tv" aria-label="Game screen. Walk to a numbered sign and press Space, or use the buttons below."></canvas>
-    <div class="knobs"><span>Arrows / WASD to walk · SPACE to choose · or tap the screen</span><span><i></i><i></i></span></div>
+    <div class="knobs"><span>Move: arrow keys or W A S D · Choose: SPACE · Or tap a sign</span><span><i></i><i></i></span></div>
   </div>
   <div id="app" class="panel">Loading…</div>
 </main>

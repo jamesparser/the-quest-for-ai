@@ -1,5 +1,7 @@
 # The Quest for AI (TQFAI) 🦉🍄
 
+### ▶️ Play it now: **https://tqfai-quest-for-ai.vercel.app**
+
 > ***"Aligning seeded empathy into the geometry of autonomous systems with the pulse of human life."***
 
 ## 🌐 Executive Summary & Vision
